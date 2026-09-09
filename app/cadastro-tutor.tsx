@@ -16,11 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChooseProfileTypeButton } from '@/components/choose-profile-type-button';
 import { PetFlowColors } from '@/constants/petflow';
+import { useAuth } from '@/contexts/auth-context';
 import { getErrorMessage, signupTutorAndLogin } from '@/lib/api/register';
 import { getProfile, saveProfile } from '@/lib/profile-storage';
 
 export default function CadastroTutorScreen() {
   const router = useRouter();
+  const { refreshSession } = useAuth();
   const [tutorName, setTutorName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -69,6 +71,7 @@ export default function CadastroTutorScreen() {
         ...profile,
         password,
       });
+      await refreshSession();
       router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Erro', getErrorMessage(error));

@@ -1,35 +1,9 @@
 import { Redirect } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { PetFlowColors } from '@/constants/petflow';
-import { getProfile } from '@/lib/profile-storage';
-
+/**
+ * A decisão de para onde ir é do guarda de rota em _layout.tsx,
+ * que olha a sessão real. Aqui só apontamos para a área logada.
+ */
 export default function Index() {
-  const [href, setHref] = useState<string | null>(null);
-
-  useEffect(() => {
-    getProfile().then((profile) => {
-      setHref(profile.onboardingCompleted ? '/(tabs)' : '/onboarding');
-    });
-  }, []);
-
-  if (!href) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={PetFlowColors.primary} />
-      </View>
-    );
-  }
-
-  return <Redirect href={href} />;
+  return <Redirect href="/(tabs)" />;
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PetFlowColors.background,
-  },
-});

@@ -1,51 +1,82 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
 
+import { PetFlowColors } from '@/constants/petflow';
+import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { getProfile } from '@/lib/profile-storage';
+import { queryClient } from '@/lib/query-client';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-export default function RootLayout() {
+/** Rotas acessíveis sem sessão. Todo o resto é protegido. */
+const PUBLIC_ROUTES = ['login', 'cadastro-tutor'];
+
+function RootNavigator() {
   const colorScheme = useColorScheme();
+  const { isAuthenticated, isRestoring } = useAuth();
   const router = useRouter();
   const segments = useSegments();
-  const [checked, setChecked] = useState(false);
 
+  // Guarda de rota integrada à navegação: sem token, nenhuma tela interna abre,
+  // nem por navegação direta ou deep link.
   useEffect(() => {
-    getProfile().then((profile) => {
-      const inOnboardingFlow =
-        segments[0] === 'onboarding' ||
-        segments[0] === 'cadastro-clinica' ||
-        segments[0] === 'cadastro-tutor';
-      if (!profile.onboardingCompleted && !inOnboardingFlow) {
-        router.replace('/onboarding');
-      }
-      setChecked(true);
-    });
-  }, []);
+    if (isRestoring) return;
+
+    const isPublic = PUBLIC_ROUTES.includes(segments[0] ?? '');
+
+    if (!isAuthenticated && !isPublic) {
+      router.replace('/login');
+    } else if (isAuthenticated && isPublic) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isRestoring, segments, router]);
+
+  if (isRestoring) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color={PetFlowColors.primary} />
+      </View>
+    );
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-        <Stack.Screen name="cadastro-clinica" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="cadastro-tutor" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="cadastrar-pet" options={{ headerShown: false }} />
         <Stack.Screen name="cadastrar-lembrete" options={{ headerShown: false }} />
         <Stack.Screen name="editar-perfil" options={{ headerShown: false }} />
-        <Stack.Screen name="editar-perfil-clinica" options={{ headerShown: false }} />
-        <Stack.Screen name="cadastrar-veterinario" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
   );
 }
+
+export default function RootLayout() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: PetFlowColors.background,
+  },
+});
