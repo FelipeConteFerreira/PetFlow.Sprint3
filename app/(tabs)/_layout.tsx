@@ -2,8 +2,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/haptic-tab';
 import { PetFlowColors } from '@/constants/petflow';
 import { getProfile } from '@/lib/profile-storage';
 import type { UserType } from '@/types/profile';
@@ -22,7 +20,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarButton: HapticTab,
         tabBarActiveTintColor: activeColor,
         tabBarInactiveTintColor: PetFlowColors.textMuted,
         tabBarStyle: {

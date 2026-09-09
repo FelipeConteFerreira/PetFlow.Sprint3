@@ -1,31 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
-
 import { PetFlowColors } from '@/constants/petflow';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { queryClient } from '@/lib/query-client';
 
 export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-/** Rotas acessíveis sem sessão. Todo o resto é protegido. */
+
 const PUBLIC_ROUTES = ['login', 'cadastro-tutor'];
 
 function RootNavigator() {
-  const colorScheme = useColorScheme();
   const { isAuthenticated, isRestoring } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
-  // Guarda de rota integrada à navegação: sem token, nenhuma tela interna abre,
-  // nem por navegação direta ou deep link.
   useEffect(() => {
     if (isRestoring) return;
 
@@ -47,7 +41,7 @@ function RootNavigator() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -57,8 +51,8 @@ function RootNavigator() {
         <Stack.Screen name="cadastrar-lembrete" options={{ headerShown: false }} />
         <Stack.Screen name="editar-perfil" options={{ headerShown: false }} />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+      <StatusBar style="dark" />
+    </>
   );
 }
 
