@@ -1,22 +1,34 @@
-import { apiRequest } from '@/lib/api/http';
-import type { PetApi, PetRequest, SpringPage } from '@/types/api';
+import { apiRequest, buildQuery } from '@/lib/api/http';
+import type { PageParams, PetRequest, PetResponse, SpringPage } from '@/types/api';
 
-/** A API Java devolve Page do Spring nas listagens; a tela só quer o array. */
-export async function listPets(page = 0, size = 50): Promise<PetApi[]> {
-  const result = await apiRequest<SpringPage<PetApi> | PetApi[]>(`/pets?page=${page}&size=${size}`);
-  return Array.isArray(result) ? result : (result.content ?? []);
+/** Pets do tutor logado — é esta a lista que a tela "Meus pets" mostra. */
+export async function listPetsDoTutor(
+  tutorId: number,
+  page: PageParams = {}
+): Promise<PetResponse[]> {
+  const result = await apiRequest<SpringPage<PetResponse>>(
+    `/pets/tutor/${tutorId}${buildQuery({ page: page.page ?? 0, size: page.size ?? 50 })}`
+  );
+  return result.content ?? [];
 }
 
-export function getPet(id: number): Promise<PetApi> {
-  return apiRequest<PetApi>(`/pets/${id}`);
+export async function listPets(page: PageParams = {}): Promise<PetResponse[]> {
+  const result = await apiRequest<SpringPage<PetResponse>>(
+    `/pets${buildQuery({ page: page.page ?? 0, size: page.size ?? 50 })}`
+  );
+  return result.content ?? [];
 }
 
-export function createPet(data: PetRequest): Promise<PetApi> {
-  return apiRequest<PetApi>('/pets', { method: 'POST', body: data });
+export function getPet(id: number): Promise<PetResponse> {
+  return apiRequest<PetResponse>(`/pets/${id}`);
 }
 
-export function updatePet(id: number, data: PetRequest): Promise<PetApi> {
-  return apiRequest<PetApi>(`/pets/${id}`, { method: 'PUT', body: data });
+export function createPet(data: PetRequest): Promise<PetResponse> {
+  return apiRequest<PetResponse>('/pets', { method: 'POST', body: data });
+}
+
+export function updatePet(id: number, data: PetRequest): Promise<PetResponse> {
+  return apiRequest<PetResponse>(`/pets/${id}`, { method: 'PUT', body: data });
 }
 
 export function deletePet(id: number): Promise<void> {

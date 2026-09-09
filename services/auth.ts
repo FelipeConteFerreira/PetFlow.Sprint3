@@ -1,11 +1,18 @@
 import { apiRequest } from '@/lib/api/http';
 import type { LoginRequest, LoginResponse } from '@/types/api';
 
-/** HTTP puro. Sem React, sem estado, sem AsyncStorage. */
 export function login(payload: LoginRequest): Promise<LoginResponse> {
   return apiRequest<LoginResponse>('/auth/login', {
     method: 'POST',
     body: payload,
+    auth: false,
+  });
+}
+
+export function refresh(refreshToken: string): Promise<LoginResponse> {
+  return apiRequest<LoginResponse>('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken },
     auth: false,
   });
 }

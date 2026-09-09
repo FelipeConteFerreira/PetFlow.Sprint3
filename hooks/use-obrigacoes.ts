@@ -4,9 +4,10 @@ import { queryKeys } from '@/lib/query-client';
 import { listObrigacoes } from '@/services/obrigacoes';
 import type { ObrigacaoStatus } from '@/types/api';
 
-export function useObrigacoes(status: ObrigacaoStatus = 'PREVISTA') {
+/** Obrigações geradas pelo motor de protocolos — somente leitura na API. */
+export function useObrigacoes(status: ObrigacaoStatus = 'PREVISTA', petId?: number) {
   return useQuery({
-    queryKey: queryKeys.obrigacoes(status),
-    queryFn: () => listObrigacoes(status),
+    queryKey: queryKeys.obrigacoes(status, petId),
+    queryFn: () => listObrigacoes({ status, petId }),
   });
 }
