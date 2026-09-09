@@ -1,9 +1,12 @@
-export type ApiUserTipo = 'TUTOR' | 'VETERINARIO' | 'COLABORADOR';
+// Tipos do contrato compartilhado (documento mestre §15).
+// PROVISÓRIO nos campos de Pet e Obrigacao: confirmar com o Swagger da API Java.
+
+export type ApiUserTipo = 'TUTOR' | 'VETERINARIO' | 'RECEPCIONISTA';
 
 export type LoginRequest = {
   email: string;
   senha: string;
-  tipo: ApiUserTipo;
+  tipo?: ApiUserTipo;
 };
 
 export type LoginResponse = {
@@ -15,6 +18,16 @@ export type LoginResponse = {
   email: string;
 };
 
+export type SpringPage<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  number: number;
+  size: number;
+};
+
+// ---------- Tutor ----------
+
 export type TutorRegisterRequest = {
   nome: string;
   email: string;
@@ -23,6 +36,8 @@ export type TutorRegisterRequest = {
   telefoneEmergencia?: string;
   canalPreferencial?: 'APP' | 'WEB' | 'WHATSAPP';
 };
+
+export type TutorUpdateRequest = Omit<TutorRegisterRequest, 'senha'> & { senha?: string };
 
 export type TutorApi = {
   id: number;
@@ -34,53 +49,43 @@ export type TutorApi = {
   dtCadastro?: string;
 };
 
-export type ClinicaRegisterRequest = {
+// ---------- Pet ----------
+
+export type Especie = 'CANINO' | 'FELINO';
+export type Porte = 'PEQUENO' | 'MEDIO' | 'GRANDE';
+
+export type PetRequest = {
   nome: string;
-  cnpj: string;
-  logradouro: string;
-  numero?: string;
-  bairro?: string;
-  cidade: string;
-  estado: string;
-  cep?: string;
-  telefone?: string;
+  especie: Especie;
+  raca?: string;
+  porte?: Porte;
+  dtNascimento?: string; // ISO yyyy-MM-dd
+  idTutor?: number;
 };
 
-export type ClinicaApi = {
+export type PetApi = PetRequest & {
   id: number;
-  nome: string;
-  cnpj: string;
-  logradouro: string;
-  numero?: string;
-  bairro?: string;
-  cidade: string;
-  estado: string;
-  cep?: string;
-  telefone?: string;
+  idTutor: number;
 };
 
-export type VeterinarioRegisterRequest = {
-  nome: string;
-  crmv: string;
-  especialidade?: string;
-  clinicaId: number;
-  email: string;
-  senha: string;
-};
+// ---------- Obrigação ----------
 
-export type VeterinarioApi = {
+export type ObrigacaoStatus =
+  | 'PREVISTA'
+  | 'NOTIFICADA'
+  | 'RESPONDIDA'
+  | 'AGENDADA'
+  | 'CUMPRIDA'
+  | 'PERDIDA';
+
+export type ObrigacaoApi = {
   id: number;
-  nome: string;
-  crmv: string;
-  especialidade?: string;
-  clinicaId: number;
-  clinicaNome?: string;
-};
-
-export type SpringPage<T> = {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
+  idPet: number;
+  nomePet?: string;
+  nomeProtocolo: string;
+  tipoProcedimento?: string;
+  dtPrevista: string;
+  dtJanelaInicio?: string;
+  dtJanelaFim?: string;
+  status: ObrigacaoStatus;
 };
