@@ -1,74 +1,54 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+
 import { PetFlowColors } from '@/constants/petflow';
-import { getProfile } from '@/lib/profile-storage';
-import type { UserType } from '@/types/profile';
 
+/**
+ * As quatro abas do aplicativo do tutor.
+ *
+ * Não há mais escolha de perfil: as abas de clínica saíram junto com as telas
+ * que dependiam de endpoints que um token de tutor não alcança. Sem esse
+ * `userType` para consultar, o layout deixou de precisar carregar nada antes
+ * de desenhar — e as abas param de piscar na abertura.
+ */
 export default function TabLayout() {
-  const [userType, setUserType] = useState<UserType | undefined>(undefined);
-
-  useEffect(() => {
-    getProfile().then((p) => setUserType(p.userType ?? 'tutor'));
-  }, []);
-
-  const isClinica = userType === 'clinica';
-  const activeColor = isClinica ? PetFlowColors.blue : PetFlowColors.primary;
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: activeColor,
+        tabBarActiveTintColor: PetFlowColors.primary,
         tabBarInactiveTintColor: PetFlowColors.textMuted,
         tabBarStyle: {
-          backgroundColor: '#fff',
+          backgroundColor: PetFlowColors.card,
           borderTopColor: PetFlowColors.border,
           paddingTop: 4,
           height: Platform.OS === 'ios' ? 88 : 64,
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Início',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="veterinarians"
-        options={{
-          title: 'Equipe',
-          href: isClinica ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="stethoscope" size={size} color={color} />
-          ),
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="pets"
         options={{
-          title: 'Meus Pets',
-          href: isClinica ? null : undefined,
+          title: 'Meus pets',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="paw" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="reminders"
+        name="agendamentos"
         options={{
-          title: 'Lembretes',
-          href: isClinica ? null : undefined,
+          title: 'Agenda',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
+            <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />

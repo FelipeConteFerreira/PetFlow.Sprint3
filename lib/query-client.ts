@@ -2,7 +2,9 @@ import { QueryClient } from '@tanstack/react-query';
 
 /**
  * Cliente único do TanStack Query.
- * retry 1 porque a API no Render pode estar acordando na primeira chamada.
+ *
+ * `retry: 1` porque a instância gratuita do Render dorme: a primeira chamada
+ * depois de um tempo ocioso pode falhar enquanto a máquina acorda.
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,17 +13,26 @@ export const queryClient = new QueryClient({
   },
 });
 
-/** Chaves de cache centralizadas — nada de string solta espalhada pelas telas. */
+/**
+ * Chaves de cache centralizadas — nada de string solta espalhada pelas telas.
+ *
+ * Não há mais `tutorId` nas chaves: a superfície do tutor devolve só o que é
+ * do token, e o `queryClient.clear()` do logout já separa uma sessão da outra.
+ */
 export const queryKeys = {
-  pets: (tutorId: number) => ['pets', tutorId] as const,
+  pets: ['pets'] as const,
   pet: (id: number) => ['pets', 'detalhe', id] as const,
+  petFicha: (id: number) => ['pets', 'ficha', id] as const,
+  petConsultas: (id: number) => ['pets', 'consultas', id] as const,
+  petVacinas: (id: number) => ['pets', 'vacinas', id] as const,
+
   agendamentos: ['agendamentos'] as const,
-  agendamento: (id: number) => ['agendamentos', id] as const,
-  obrigacoes: (status?: string, petId?: number) =>
-    ['obrigacoes', status ?? 'todas', petId ?? 'todos'] as const,
+  agendamento: (id: number) => ['agendamentos', 'detalhe', id] as const,
+
+  tutorMe: ['tutor', 'me'] as const,
+
   especies: ['catalogo', 'especies'] as const,
   racas: (especieId?: number) => ['catalogo', 'racas', especieId ?? 'todas'] as const,
-  clinicas: ['catalogo', 'clinicas'] as const,
-  veterinarios: (clinicaId?: number) => ['catalogo', 'veterinarios', clinicaId ?? 'todas'] as const,
-  tutor: (id: number) => ['tutores', id] as const,
+  veterinarios: ['catalogo', 'veterinarios'] as const,
+  clinicasPublicas: ['catalogo', 'clinicas-publicas'] as const,
 };

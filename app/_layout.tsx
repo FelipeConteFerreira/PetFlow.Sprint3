@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
+
 import { PetFlowColors } from '@/constants/petflow';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
 import { queryClient } from '@/lib/query-client';
@@ -12,8 +13,8 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-
-const PUBLIC_ROUTES = ['login', 'cadastro-tutor'];
+/** Rotas alcançáveis sem sessão. Todo o resto passa pelo guarda abaixo. */
+const ROTAS_PUBLICAS = ['login', 'cadastro-tutor'];
 
 function RootNavigator() {
   const { isAuthenticated, isRestoring } = useAuth();
@@ -23,13 +24,10 @@ function RootNavigator() {
   useEffect(() => {
     if (isRestoring) return;
 
-    const isPublic = PUBLIC_ROUTES.includes(segments[0] ?? '');
+    const publica = ROTAS_PUBLICAS.includes(segments[0] ?? '');
 
-    if (!isAuthenticated && !isPublic) {
-      router.replace('/login');
-    } else if (isAuthenticated && isPublic) {
-      router.replace('/(tabs)');
-    }
+    if (!isAuthenticated && !publica) router.replace('/login');
+    else if (isAuthenticated && publica) router.replace('/(tabs)');
   }, [isAuthenticated, isRestoring, segments, router]);
 
   if (isRestoring) {
@@ -42,14 +40,14 @@ function RootNavigator() {
 
   return (
     <>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="cadastro-tutor" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="cadastrar-pet" options={{ headerShown: false }} />
-        <Stack.Screen name="cadastrar-lembrete" options={{ headerShown: false }} />
-        <Stack.Screen name="editar-perfil" options={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="cadastro-tutor" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="pet/[id]" />
+        <Stack.Screen name="cadastrar-pet" />
+        <Stack.Screen name="agendar" />
       </Stack>
       <StatusBar style="dark" />
     </>

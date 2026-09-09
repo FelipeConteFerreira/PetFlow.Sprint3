@@ -1,18 +1,11 @@
-import { Link, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PetFlowColors } from '@/constants/petflow';
+import { Field, FormError, Input, PrimaryButton } from '@/components/ui/form';
+import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
 import { useAuth } from '@/contexts/auth-context';
 import { getErrorMessage } from '@/lib/api/errors';
 
@@ -22,128 +15,133 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [erro, setErro] = useState<string | null>(null);
+  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  function validar(): string | null {
-    if (!email.trim() || !/^\S+@\S+\.\S+$/.test(email.trim())) return 'Informe um e-mail válido.';
-    if (senha.length < 6) return 'A senha deve ter pelo menos 6 caracteres.';
-    return null;
+  function validar(): boolean {
+    const novos: Record<string, string> = {};
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) novos.email = 'Informe um e-mail válido.';
+    if (senha.length < 6) novos.senha = 'A senha tem pelo menos 6 caracteres.';
+    setErros(novos);
+    return Object.keys(novos).length === 0;
   }
 
-  async function handleEntrar() {
-    const problema = validar();
-    if (problema) {
-      setErro(problema);
-      return;
-    }
+  async function entrar() {
+    setErroEnvio(null);
+    if (!validar()) return;
 
-    setErro(null);
     setEnviando(true);
     try {
       await signIn(email.trim().toLowerCase(), senha);
       router.replace('/(tabs)');
     } catch (err) {
-      setErro(getErrorMessage(err));
+      setErroEnvio(getErrorMessage(err));
     } finally {
       setEnviando(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.content}
-      >
-        <Text style={styles.emoji}>🐾</Text>
-        <Text style={styles.titulo}>PetFlow</Text>
-        <Text style={styles.subtitulo}>Entre para acompanhar os cuidados do seu pet</Text>
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.conteudo}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.marcaBloco}>
+            <View style={[styles.marcaIcone, shadow(2)]}>
+              <MaterialCommunityIcons name="paw" size={36} color="#fff" />
+            </View>
+            <Text style={styles.marca}>PetFlow</Text>
+            <Text style={styles.marcaTexto}>
+              Os cuidados do seu pet, acompanhados de perto.
+            </Text>
+          </View>
 
-        <Text style={styles.label}>E-mail</Text>
-        <TextInput
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-          placeholder="voce@email.com"
-          placeholderTextColor="#9CA3AF"
-          editable={!enviando}
-        />
+          <View style={[styles.cartao, shadow(1)]}>
+            <Field label="E-mail" error={erros.email}>
+              <Input
+                value={email}
+                onChangeText={setEmail}
+                placeholder="voce@email.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoComplete="email"
+                invalid={!!erros.email}
+                editable={!enviando}
+              />
+            </Field>
 
-        <Text style={styles.label}>Senha</Text>
-        <TextInput
-          style={styles.input}
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry
-          placeholder="••••••••"
-          placeholderTextColor="#9CA3AF"
-          editable={!enviando}
-        />
+            <Field label="Senha" error={erros.senha}>
+              <Input
+                value={senha}
+                onChangeText={setSenha}
+                placeholder="••••••••"
+                secureTextEntry
+                invalid={!!erros.senha}
+                editable={!enviando}
+              />
+            </Field>
 
-        {erro ? <Text style={styles.erro}>{erro}</Text> : null}
+            <FormError message={erroEnvio} />
 
-        <Pressable
-          style={[styles.botao, enviando && styles.botaoDesabilitado]}
-          onPress={handleEntrar}
-          disabled={enviando}
-        >
-          {enviando ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.botaoTexto}>Entrar</Text>
-          )}
-        </Pressable>
+            <PrimaryButton
+              label="Entrar"
+              icon="log-in-outline"
+              loading={enviando}
+              onPress={entrar}
+            />
+          </View>
 
-        <View style={styles.rodape}>
-          <Text style={styles.rodapeTexto}>Ainda não tem conta? </Text>
-          <Link href="/cadastro-tutor" style={styles.rodapeLink}>
-            Cadastre-se
-          </Link>
-        </View>
+          <View style={styles.rodape}>
+            <Text style={styles.rodapeTexto}>Ainda não tem conta? </Text>
+            <Text style={styles.rodapeLink} onPress={() => router.push('/cadastro-tutor')}>
+              Cadastre-se
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: PetFlowColors.background },
-  content: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
-  emoji: { fontSize: 48, textAlign: 'center' },
-  titulo: {
-    fontSize: 32,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: PetFlowColors.primary,
-    marginTop: 8,
-  },
-  subtitulo: { fontSize: 15, textAlign: 'center', color: '#6B7280', marginBottom: 32 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    backgroundColor: '#FFFFFF',
-    marginBottom: 16,
-    color: '#111827',
-  },
-  erro: { color: '#DC2626', fontSize: 14, marginBottom: 12 },
-  botao: {
+  safe: { flex: 1, backgroundColor: PetFlowColors.background },
+  flex: { flex: 1 },
+  conteudo: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
+  marcaBloco: { alignItems: 'center', marginBottom: Spacing.xxl },
+  marcaIcone: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: PetFlowColors.primary,
-    borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 8,
+    justifyContent: 'center',
   },
-  botaoDesabilitado: { opacity: 0.6 },
-  botaoTexto: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
-  rodape: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
-  rodapeTexto: { color: '#6B7280', fontSize: 14 },
+  marca: {
+    fontSize: 30,
+    fontWeight: '800',
+    color: PetFlowColors.text,
+    marginTop: Spacing.lg,
+    letterSpacing: -0.6,
+  },
+  marcaTexto: {
+    fontSize: 15,
+    color: PetFlowColors.textSecondary,
+    marginTop: Spacing.xs,
+    textAlign: 'center',
+  },
+  cartao: {
+    backgroundColor: PetFlowColors.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: PetFlowColors.border,
+    padding: Spacing.xl,
+  },
+  rodape: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
+  rodapeTexto: { color: PetFlowColors.textSecondary, fontSize: 14 },
   rodapeLink: { color: PetFlowColors.primary, fontSize: 14, fontWeight: '700' },
 });

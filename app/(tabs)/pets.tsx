@@ -1,61 +1,83 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PetFlowColors } from '@/constants/petflow';
-import { getPets } from '@/lib/pets-storage';
-import type { Pet } from '@/types/pet';
-import { SEX_LABELS, SPECIES_EMOJI, SPECIES_LABELS } from '@/types/pet';
+import { PetCard } from '@/components/pet-card';
+import { AsyncBoundary, EmptyState } from '@/components/ui/screen-state';
+import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { usePets } from '@/hooks/use-pets';
 
+/**
+ * Meus pets — lista vinda de `GET /api/tutor/pets`.
+ *
+ * Não há `useState` guardando a lista nem `useFocusEffect` recarregando na
+ * mão: quem traz o dado é o `usePets`, e quem atualiza depois de um cadastro,
+ * de uma edição ou de uma remoção é a invalidação de cache das mutations.
+ */
 export default function PetsScreen() {
   const router = useRouter();
-  const [pets, setPets] = useState<Pet[]>([]);
+  const { data: pets, isPending, isFetching, error, refetch } = usePets();
 
-  useFocusEffect(
-    useCallback(() => {
-      getPets().then(setPets);
-    }, [])
+  const estado = (
+    <AsyncBoundary
+      isLoading={isPending}
+      error={error}
+      onRetry={() => refetch()}
+      isRetrying={isFetching}
+      loadingLabel="Buscando seus pets…"
+    />
   );
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Meus Pets</Text>
-        <Pressable style={styles.addButton} onPress={() => router.push('/cadastrar-pet')}>
-          <MaterialCommunityIcons name="plus" size={22} color="#fff" />
+        <View>
+          <Text style={styles.titulo}>Meus pets</Text>
+          {pets?.length ? (
+            <Text style={styles.subtitulo}>
+              {pets.length} {pets.length === 1 ? 'pet cadastrado' : 'pets cadastrados'}
+            </Text>
+          ) : null}
+        </View>
+
+        <Pressable
+          style={({ pressed }) => [styles.adicionar, shadow(1), pressed && styles.pressionado]}
+          accessibilityLabel="Cadastrar pet"
+          onPress={() => router.push('/cadastrar-pet')}>
+          <Ionicons name="add" size={24} color="#fff" />
         </Pressable>
       </View>
 
-      {pets.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>🐾</Text>
-          <Text style={styles.emptyTitle}>Nenhum pet cadastrado</Text>
-          <Text style={styles.emptySubtitle}>Toque em + para cadastrar seu primeiro pet.</Text>
-          <Pressable style={styles.emptyButton} onPress={() => router.push('/cadastrar-pet')}>
-            <Text style={styles.emptyButtonText}>Cadastrar Pet</Text>
-          </Pressable>
-        </View>
-      ) : (
+      {estado ?? (
         <FlatList
           data={pets}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={pets?.length ? styles.lista : styles.listaVazia}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isFetching}
+              onRefresh={refetch}
+              tintColor={PetFlowColors.primary}
+              colors={[PetFlowColors.primary]}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              title="Nenhum pet por aqui ainda"
+              description="Cadastre seu primeiro pet para acompanhar vacinas, consultas e agendamentos em um lugar só."
+              actionLabel="Cadastrar pet"
+              onAction={() => router.push('/cadastrar-pet')}
+            />
+          }
           renderItem={({ item }) => (
-            <View style={styles.petCard}>
-              <Text style={styles.petEmoji}>{SPECIES_EMOJI[item.species]}</Text>
-              <View style={styles.petInfo}>
-                <Text style={styles.petName}>{item.name}</Text>
-                <Text style={styles.petDetail}>
-                  {item.breed} · {SPECIES_LABELS[item.species]} · {SEX_LABELS[item.sex]}
-                </Text>
-                <Text style={styles.petMeta}>
-                  {item.age} {item.age === '1' ? 'ano' : 'anos'}
-                  {item.weight ? ` · ${item.weight} kg` : ''}
-                </Text>
-              </View>
-            </View>
+            <PetCard
+              pet={item}
+              onPress={() =>
+                router.push({ pathname: '/pet/[id]', params: { id: String(item.id) } })
+              }
+            />
           )}
         />
       )}
@@ -69,55 +91,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.lg,
   },
-  title: { fontSize: 24, fontWeight: '800', color: PetFlowColors.text },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  titulo: { fontSize: 26, fontWeight: '800', color: PetFlowColors.text, letterSpacing: -0.4 },
+  subtitulo: { fontSize: 13, color: PetFlowColors.textSecondary, marginTop: 2 },
+  adicionar: {
+    width: 46,
+    height: 46,
+    borderRadius: Radius.md,
     backgroundColor: PetFlowColors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  empty: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  emptyEmoji: { fontSize: 48, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: PetFlowColors.text },
-  emptySubtitle: {
-    fontSize: 14,
-    color: PetFlowColors.textSecondary,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  emptyButton: {
-    marginTop: 24,
-    backgroundColor: PetFlowColors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 14,
-  },
-  emptyButtonText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  list: { padding: 20, gap: 12 },
-  petCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: PetFlowColors.card,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    marginBottom: 12,
-  },
-  petEmoji: { fontSize: 40 },
-  petInfo: { flex: 1 },
-  petName: { fontSize: 18, fontWeight: '700', color: PetFlowColors.primary },
-  petDetail: { fontSize: 13, color: PetFlowColors.textSecondary, marginTop: 4 },
-  petMeta: { fontSize: 12, color: PetFlowColors.textMuted, marginTop: 4 },
+  pressionado: { opacity: 0.8 },
+  lista: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.md },
+  listaVazia: { flexGrow: 1 },
 });
