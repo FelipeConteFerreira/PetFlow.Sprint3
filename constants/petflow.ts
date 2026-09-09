@@ -1,0 +1,18 @@
+export const PetFlowColors = {
+  primary: '#2E9B5B',
+  primaryDark: '#248A4E',
+  orange: '#F5A623',
+  blue: '#4A90D9',
+  blueDark: '#3A7FC8',
+  text: '#1A1A1A',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  background: '#F8FAF9',
+  card: '#FFFFFF',
+  border: '#E5E7EB',
+  badge: '#E8915A',
+  badgeBg: '#FFF4ED',
+  aiBg: '#E8F5EC',
+  aiBorder: '#C8E6D0',
+  infoBg: '#F3F4F6',
+};
