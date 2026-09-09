@@ -34,7 +34,11 @@ export async function apiRequest<T>(
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, API_TIMEOUT_MS);
 
   try {
     const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -57,8 +61,12 @@ export async function apiRequest<T>(
     if (!text) return undefined as T;
     return JSON.parse(text) as T;
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
-      throw new Error('A API demorou para responder. Verifique se o servidor está no ar.');
+        if (timedOut) {
+      throw new Error('A API não respondeu a tempo. Verifique se o servidor está no ar.');
+    }
+    if (err instanceof TypeError) {
+      throw new Error('Sem conexão com a API. Verifique a internet ou o endereço do servidor.');
+    
     }
     throw err;
   } finally {
