@@ -1,139 +1,266 @@
-# 🐾 PetFlow
+# 🐾 PetFlow — aplicativo do tutor
 
-Aplicativo mobile desenvolvido com **React Native + Expo** como projeto do 1º Sprint da disciplina de Mobile Application Development — FIAP.
+Aplicativo mobile do **Clyvo Vet**, feito em React Native com Expo e integrado à
+API Java (Spring Boot) do projeto. É o aplicativo do **tutor**: quem tem um pet
+e quer acompanhar de perto o cuidado dele.
 
----
-
-## 📱 Sobre o Projeto
-
-O PetFlow resolve um problema comum: tutores só cuidam dos pets em situações de emergência. O app propõe uma abordagem preventiva, centralizando lembretes, histórico e rotina de cuidados em um só lugar.
-
-Além do fluxo do tutor, o PetFlow suporta o perfil de **Clínica**, permitindo o gerenciamento da equipe de veterinários diretamente pelo app.
+Disciplina de Mobile Application Development — FIAP, Challenge 2026, Sprint 3.
 
 ---
 
-## 🎯 Objetivo
+## 🎯 O problema
 
-- Lembrar automaticamente de cuidados (vacinas, remédios, check-ups)
-- Armazenar o histórico e perfil do pet
-- Personalizar a experiência conforme o tipo de usuário (Tutor ou Clínica)
-- Incentivar uma rotina contínua de saúde animal
+Tutor só lembra da clínica na emergência. Vacina atrasa, o reforço passa em
+branco, o histórico do animal fica espalhado entre a memória do dono e uma
+pasta de papel na clínica. Quando o problema aparece, ele já está caro.
 
----
+## 💡 A solução
 
-## 🚀 Funcionalidades
+Trazer o cuidado preventivo para a mão do tutor: os pets cadastrados, a carteira
+de vacinação, o histórico de consultas e a agenda com a clínica, tudo no
+aplicativo — e tudo **vindo da mesma base que a clínica usa**, e não de uma cópia
+guardada no aparelho.
 
-### Tutor
-- 📋 Cadastro e gerenciamento de pets
-- 🔔 Lembretes de vacinas, medicamentos e check-ups
-- 📊 Acompanhamento de lembretes do dia
-- 👤 Perfil com contato do veterinário e emergência
-- ✏️ Edição de perfil completa
-
-### Clínica
-- 🏥 Dashboard com resumo da equipe
-- 👨‍⚕️ Cadastro e gerenciamento de veterinários
-- ✅ Controle de veterinários ativos
-- ✏️ Edição de perfil da clínica (nome, CNPJ, endereço, contato)
+Todo dado que aparece na tela vem da API. Não há dado de exemplo embutido no
+código, nem tela que finge ter carregado alguma coisa.
 
 ---
 
-## 📱 Telas do Aplicativo
+## 🔌 Integração com a API
 
-| Tela | Descrição |
-|------|-----------|
-| Onboarding | Escolha do tipo de perfil (Tutor ou Clínica) |
-| Cadastro Tutor | Formulário de criação de conta do tutor |
-| Cadastro Clínica | Formulário de criação de conta da clínica |
-| Home (Tutor) | Resumo de pets, lembretes e próximo cuidado |
-| Home (Clínica) | Dashboard com equipe e veterinários recentes |
-| Meus Pets | Lista de pets cadastrados |
-| Lembretes | Lista de lembretes ativos com filtros |
-| Equipe | Lista de veterinários da clínica |
-| Perfil | Dados do usuário, atalhos e estatísticas |
-| Cadastrar Pet | Formulário completo de cadastro de pet |
-| Cadastrar Lembrete | Formulário de criação de lembrete |
-| Cadastrar Veterinário | Formulário de cadastro de veterinário |
-| Editar Perfil (Tutor) | Edição de dados do tutor |
-| Editar Perfil (Clínica) | Edição de dados da clínica |
+O aplicativo fala com a **superfície do tutor** da API: `/api/tutor/**`.
 
----
+Essa separação existe por segurança. A API de gestão da clínica
+(`/api/pets`, `/api/agendamentos`, `/api/veterinarios`) aceitava o id do dono
+pela URL ou pelo corpo, então trocar o número era ler e escrever no nome de
+outro tutor. Na superfície do tutor **o dono sai sempre do token** — nenhuma
+chamada do aplicativo envia `tutorId`. Recurso de outra pessoa responde `404`, e
+não `403`, de propósito: quem não é dono não precisa saber a diferença entre
+"não existe" e "não é seu".
 
-## 🔄 Fluxo do App
+A arquitetura é sempre a mesma, sem atalho:
 
 ```
-Abertura do app
-    └── Onboarding (escolha: Tutor ou Clínica)
-            ├── Tutor
-            │     └── Cadastro → Home → Pets / Lembretes / Perfil
-            └── Clínica
-                  └── Cadastro → Dashboard → Equipe / Perfil
+tela  →  hook (TanStack Query)  →  service  →  cliente HTTP  →  API
 ```
+
+Nenhuma tela chama `fetch`. Nenhuma tela guarda lista do servidor em `useState`.
+Depois de uma escrita, quem atualiza a lista é a **invalidação de cache** da
+mutation — não um `useFocusEffect` recarregando na mão.
+
+O cliente HTTP (`lib/api/http.ts`) cuida do `Bearer` token, renova o acesso uma
+vez quando a API responde `401` e derruba para o login quando a renovação também
+falha.
+
+### Mapa de CRUD → endpoint
+
+**Pets** (funcionalidade completa)
+
+| Operação | Onde, no app | Método e endpoint |
+|---|---|---|
+| Listar | Aba **Meus pets**, e o carrossel do Início | `GET /api/tutor/pets` |
+| Detalhar | Toque no pet → **Detalhe do pet** | `GET /api/tutor/pets/{id}/ficha-tecnica` |
+| Criar | Botão **+** → **Cadastrar pet** | `POST /api/tutor/pets` |
+| Atualizar | Detalhe → **Editar dados** | `PUT /api/tutor/pets/{id}` |
+| Remover | Detalhe → **Remover pet** (com confirmação) | `DELETE /api/tutor/pets/{id}` |
+
+**Agendamentos** (funcionalidade completa)
+
+| Operação | Onde, no app | Método e endpoint |
+|---|---|---|
+| Listar | Aba **Agenda** (Próximas / Histórico) | `GET /api/tutor/agendamentos` |
+| Detalhar | Toque na consulta | `GET /api/tutor/agendamentos/{id}` |
+| Criar | Botão **+** → **Marcar consulta** | `POST /api/tutor/agendamentos` |
+| Remarcar | Toque na consulta → novo horário | `PUT /api/tutor/agendamentos/{id}` |
+| Cancelar | **✕** no cartão (com confirmação) | `DELETE /api/tutor/agendamentos/{id}` |
+
+**Leitura de apoio**
+
+| O que | Onde | Endpoint |
+|---|---|---|
+| Perfil do tutor | Aba **Perfil**, saudação do Início | `GET /api/tutor/me` |
+| Carteira de vacinação | Detalhe do pet | `GET /api/tutor/pets/{id}/vacinas` |
+| Histórico de consultas | Detalhe do pet | `GET /api/tutor/pets/{id}/consultas` |
+| Espécies e raças | Formulário de pet | `GET /api/tutor/catalogo/{especies,racas}` |
+| Veterinários da clínica | Formulário de consulta | `GET /api/tutor/catalogo/veterinarios` |
+| Clínicas (sem token) | Tela de cadastro | `GET /api/clinicas/publicas` |
+
+**Autenticação**
+
+| O que | Endpoint |
+|---|---|
+| Entrar | `POST /api/auth/login` |
+| Renovar sessão | `POST /api/auth/refresh` |
+| Sair | `POST /api/auth/logout` |
+| Criar conta de tutor | `POST /api/tutores` |
+
+> **Nota sobre o `DELETE`.** Nas duas funcionalidades ele não apaga: em pets
+> inativa (o animal sai das suas listas e o histórico clínico continua com a
+> clínica) e em agendamentos muda o status para `CANCELADO`. As telas dizem isso
+> na confirmação, em vez de prometer que a ação é irreversível.
+
+> **O que o aplicativo do tutor não faz.** Cadastro e edição de veterinário,
+> clínica ou catálogo são atos administrativos da equipe: um token de tutor
+> responde `403` neles. Alterar o próprio cadastro também é da clínica — a tela
+> de Perfil diz onde pedir a mudança em vez de oferecer um botão que falharia.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 📱 Telas
+
+| # | Tela | Rota | O que faz |
+|---|---|---|---|
+| 1 | Login | `/login` | Entra com e-mail e senha |
+| 2 | Cadastro do tutor | `/cadastro-tutor` | Cria a conta e escolhe a clínica |
+| 3 | Início | `/(tabs)` | Saudação, números, próxima consulta e atalhos |
+| 4 | Meus pets | `/(tabs)/pets` | Lista os pets, com puxar para atualizar |
+| 5 | Detalhe do pet | `/pet/[id]` | Ficha, vacinas, consultas, editar e remover |
+| 6 | Cadastrar / editar pet | `/cadastrar-pet` | Um formulário para criar e para editar |
+| 7 | Agenda | `/(tabs)/agendamentos` | Próximas e histórico, com cancelar |
+| 8 | Marcar / remarcar consulta | `/agendar` | Escolhe pet, veterinário, data e hora |
+| 9 | Perfil | `/(tabs)/profile` | Dados do tutor, avatar e sair da conta |
+
+Todas as telas que carregam dados mostram os **três estados**: carregando, erro
+com botão de tentar de novo, e vazio com um texto que explica o vazio.
+
+---
+
+## 🛠️ Tecnologias
 
 | Tecnologia | Uso |
-|------------|-----|
-| React Native | Framework mobile |
-| Expo (SDK 52) | Plataforma de desenvolvimento |
-| Expo Router | Navegação entre telas (Stack + Tabs) |
-| AsyncStorage | Persistência de dados local |
-| TypeScript | Tipagem estática |
-| expo-vector-icons | Ícones (Ionicons, MaterialCommunityIcons) |
-| react-native-safe-area-context | Áreas seguras de tela |
+|---|---|
+| React Native 0.86 | Framework mobile |
+| Expo SDK 57 | Plataforma e ferramentas |
+| Expo Router | Navegação por arquivos (Stack + Tabs) e proteção de rotas |
+| TanStack Query 5 | Cache de servidor, estados de carregamento e invalidação |
+| TypeScript | Tipagem dos contratos da API |
+| AsyncStorage | Sessão persistida e preferência local de avatar |
+| expo-haptics | Retorno tátil nos seletores e botões |
+| @expo/vector-icons | Ícones (Ionicons, MaterialCommunityIcons) |
+
+Nenhuma biblioteca de UI de terceiros: os componentes de `components/ui/`
+(estados de tela, formulário, cabeçalho) são do projeto.
 
 ---
 
-## 💾 Armazenamento de Dados
-
-Os dados são armazenados localmente com AsyncStorage e restaurados automaticamente ao reabrir o app:
-
-```ts
-// Exemplo — salvar pet
-await AsyncStorage.setItem('@petflow/pets', JSON.stringify(pets));
-
-// Exemplo — carregar perfil
-const raw = await AsyncStorage.getItem('@petflow/profile');
-const profile = raw ? JSON.parse(raw) : defaultProfile;
-```
-
-Dados persistidos:
-- `@petflow/profile` — perfil do usuário (tutor ou clínica)
-- `@petflow/pets` — lista de pets
-- `@petflow/reminders` — lembretes
-- `@petflow/veterinarians` — equipe de veterinários
-- `@petflow/session` — sessão de autenticação
-
----
-
-## 📋 Requisitos do Sprint Atendidos
-
-| # | Requisito | Status |
-|---|-----------|--------|
-| 1 | Navegação entre telas com Expo Router (5+ rotas) | ✅ 14 rotas |
-| 2 | Protótipo visual completo com fluxo lógico | ✅ |
-| 3 | Formulário com manipulação de estado (useState) | ✅ 7 formulários |
-| 4 | Armazenamento local com AsyncStorage | ✅ 5 storages |
-| 5 | Demonstração em vídeo narrada | 🎬  https://youtu.be/uzRVg26eQHQ |
-
----
-
-## ▶️ Como Executar
+## ▶️ Como executar
 
 ```bash
-# Instalar dependências
 npm install
-
-# Iniciar o projeto
 npx expo start
 ```
 
-Escaneie o QR Code com o app **Expo Go** (Android/iOS) ou rode em um emulador.
+Depois: `a` para o emulador Android, `i` para o simulador iOS, ou leia o QR Code
+com o **Expo Go**.
+
+### Configuração da API
+
+O app já vem apontado para o backend publicado, então **não é preciso criar
+`.env`** para rodar a demonstração. Para trocar de servidor, copie
+`.env.example` para `.env`:
+
+```bash
+EXPO_PUBLIC_API_URL=https://clyvo-vet-api-java.onrender.com
+```
+
+Informe **só o host** — o prefixo `/api` é acrescentado pelo app.
+
+### ⚠️ Rodando contra um backend local: `localhost` não funciona
+
+Esta é a pegadinha que mais custa tempo. **Emulador e aparelho físico têm o
+próprio `localhost`, que não é o da sua máquina.** Apontar o app para
+`http://localhost:8080` faz toda chamada falhar com "Sem conexão com a API",
+mesmo com o backend rodando ali do lado.
+
+Use o endereço certo para cada caso:
+
+| Onde o app roda | `EXPO_PUBLIC_API_URL` |
+|---|---|
+| Emulador Android | `http://10.0.2.2:8080` |
+| Simulador iOS | `http://localhost:8080` |
+| **Aparelho físico** | `http://<IP-DA-SUA-MAQUINA>:8080` |
+| Rede que isola dispositivos | `npx expo start --tunnel` e use a URL pública |
+
+Descubra o IP da máquina com `ipconfig` (Windows) ou `ifconfig` (Linux/macOS) —
+é o da rede local, algo como `192.168.0.15`. O celular precisa estar no **mesmo
+Wi-Fi**, e a porta `8080` precisa estar liberada no firewall.
+
+### ⏱️ A primeira chamada demora
+
+O backend está numa instância **gratuita do Render, que dorme depois de 15
+minutos ociosa**. A chamada que a acorda paga a subida da máquina inteira — nos
+nossos testes, mais de dois minutos. Não é o app travado.
+
+Por isso o timeout padrão é de 90 segundos e as consultas tentam uma segunda
+vez. Se a primeira tela demorar ou der erro, use **Tentar de novo**: a segunda
+chamada responde rápido.
+
+Contra um backend local ou já quente, 90 segundos é tempo demais para descobrir
+que a URL está errada. Baixe no `.env`:
+
+```bash
+EXPO_PUBLIC_API_TIMEOUT_MS=15000
+```
 
 ---
 
-## 👥 Equipe
+## 🔑 Credenciais de teste
 
-Desenvolvido por **PetFlow** — FIAP 2026.
+Conta de tutor já cadastrada, com pets e consultas para a demonstração:
+
+| Campo | Valor |
+|---|---|
+| E-mail | `tutor.demo@petflow.com` |
+| Senha | `Clyvo@2026` |
+| Clínica | Clinica Vida Animal (São Paulo/SP) |
+
+Ela já tem **Bidu** (Labrador) e **Mel** (Golden Retriever), com uma consulta
+confirmada e outra solicitada.
+
+Também dá para criar uma conta nova pela tela de cadastro — basta escolher uma
+clínica da lista. Uma conta nova nasce sem pets, o que é uma boa forma de ver os
+estados vazios do aplicativo.
+
+> Base de demonstração, não de produção: estas credenciais são públicas de
+> propósito.
+
+---
+
+## 👥 Integrantes
+
+| Nome | RM |
+|---|---|
+| Olavo Porto Neves | RM563558 |
+| Pedro Henrique Dias França | RM561940 |
+| Luiz Gustavo Gonçalves | RM564495 |
+| Altamir Lima | RM562906 |
+| Felipe Conte | RM562248 |
+
+---
+
+## 🎬 Vídeo de demonstração
+
+**https://youtu.be/COLOQUE-O-LINK-AQUI**
+
+> ⚠️ Substituir pelo link do vídeo da Sprint 3 antes da entrega. O link acima é
+> um lugar reservado — o vídeo da Sprint 1 não vale para esta entrega.
+
+O vídeo tem no máximo 5 minutos, é narrado e mostra: navegação entre as telas,
+autenticação (login e logout), a integração com a API acontecendo, e o
+aplicativo rodando em emulador ou aparelho.
+
+---
+
+## 📁 Organização do código
+
+```
+app/                  rotas (Expo Router)
+  (tabs)/             Início, Meus pets, Agenda, Perfil
+  pet/[id].tsx        detalhe do pet
+components/ui/        estados de tela, formulário, cabeçalho
+contexts/             sessão e proteção de rotas
+hooks/                use-pets, use-agendamentos, use-catalogo, use-tutor
+services/             uma função por endpoint da API
+lib/api/              cliente HTTP, erros, sessão persistida
+types/api.ts          contratos conferidos contra o OpenAPI da API
+```
