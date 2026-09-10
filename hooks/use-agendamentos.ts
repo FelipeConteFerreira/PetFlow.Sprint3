@@ -2,27 +2,25 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { queryKeys } from '@/lib/query-client';
 import {
-  alterarStatusAgendamento,
+  cancelarAgendamento,
   createAgendamento,
-  deleteAgendamento,
   getAgendamento,
   listAgendamentos,
   updateAgendamento,
 } from '@/services/agendamentos';
-import type { AgendamentoRequest, AgendamentoStatus, PetResponse } from '@/types/api';
+import type { AgendamentoRequest } from '@/types/api';
 
-/** CRUD de agendamentos — a segunda funcionalidade exigida pela rubrica. */
+/**
+ * CRUD de agendamentos — a segunda funcionalidade completa do aplicativo.
+ *
+ * `useAgendamentos` não recebe mais a lista de pets para filtrar no cliente:
+ * a API devolve só a agenda dos pets do tutor autenticado.
+ */
 
-export function useAgendamentos(petsDoTutor?: PetResponse[]) {
+export function useAgendamentos() {
   return useQuery({
     queryKey: queryKeys.agendamentos,
-    queryFn: async () => {
-      const todos = await listAgendamentos();
-      if (!petsDoTutor) return todos;
-      // A API não filtra por tutor; mostramos só os agendamentos dos pets dele.
-      const meus = new Set(petsDoTutor.map((p) => p.id));
-      return todos.filter((a) => meus.has(a.petId));
-    },
+    queryFn: () => listAgendamentos(),
   });
 }
 
@@ -42,6 +40,7 @@ export function useCreateAgendamento() {
   });
 }
 
+/** Remarcação. */
 export function useUpdateAgendamento(id: number) {
   const qc = useQueryClient();
   return useMutation({
@@ -53,19 +52,14 @@ export function useUpdateAgendamento(id: number) {
   });
 }
 
-export function useDeleteAgendamento() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => deleteAgendamento(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.agendamentos }),
-  });
-}
-
+/**
+ * Cancelamento. O DELETE da API muda o status para CANCELADO em vez de apagar,
+ * então o item continua na lista — com outra cara.
+ */
 export function useCancelarAgendamento() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, motivo }: { id: number; motivo?: string }) =>
-      alterarStatusAgendamento(id, 'CANCELADO' as AgendamentoStatus, motivo),
+    mutationFn: (id: number) => cancelarAgendamento(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.agendamentos }),
   });
 }
