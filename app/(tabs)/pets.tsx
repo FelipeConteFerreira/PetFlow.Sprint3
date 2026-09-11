@@ -19,15 +19,13 @@ export default function PetsScreen() {
   const router = useRouter();
   const { data: pets, isPending, isFetching, error, refetch } = usePets();
 
-  const estado = (
-    <AsyncBoundary
-      isLoading={isPending}
-      error={error}
-      onRetry={() => refetch()}
-      isRetrying={isFetching}
-      loadingLabel="Buscando seus pets…"
-    />
-  );
+  const estado = AsyncBoundary({
+    isLoading: isPending,
+    error,
+    onRetry: () => refetch(),
+    isRetrying: isFetching,
+    loadingLabel: 'Buscando seus pets…',
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

@@ -71,15 +71,13 @@ export default function PetDetalheScreen() {
     );
   }
 
-  const estado = (
-    <AsyncBoundary
-      isLoading={isPending}
-      error={error}
-      onRetry={() => refetch()}
-      isRetrying={isFetching}
-      loadingLabel="Carregando a ficha…"
-    />
-  );
+  const estado = AsyncBoundary({
+    isLoading: isPending,
+    error,
+    onRetry: () => refetch(),
+    isRetrying: isFetching,
+    loadingLabel: 'Carregando a ficha…',
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

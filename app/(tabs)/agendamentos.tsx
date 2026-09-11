@@ -58,15 +58,13 @@ export default function AgendamentosScreen() {
     );
   }
 
-  const estado = (
-    <AsyncBoundary
-      isLoading={isPending}
-      error={error}
-      onRetry={() => refetch()}
-      isRetrying={isFetching}
-      loadingLabel="Carregando sua agenda…"
-    />
-  );
+  const estado = AsyncBoundary({
+    isLoading: isPending,
+    error,
+    onRetry: () => refetch(),
+    isRetrying: isFetching,
+    loadingLabel: 'Carregando sua agenda…',
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

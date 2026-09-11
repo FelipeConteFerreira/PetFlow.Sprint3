@@ -49,19 +49,17 @@ export default function AgendarScreen() {
     pets.isPending || veterinarios.isPending || (remarcando && existente.isPending);
   const erro = pets.error ?? veterinarios.error ?? (remarcando ? existente.error : null);
 
-  const estado = (
-    <AsyncBoundary
-      isLoading={carregando}
-      error={erro}
-      onRetry={() => {
-        void pets.refetch();
-        void veterinarios.refetch();
-        if (remarcando) void existente.refetch();
-      }}
-      isRetrying={pets.isFetching || veterinarios.isFetching}
-      loadingLabel="Preparando o formulário…"
-    />
-  );
+  const estado = AsyncBoundary({
+    isLoading: carregando,
+    error: erro,
+    onRetry: () => {
+      void pets.refetch();
+      void veterinarios.refetch();
+      if (remarcando) void existente.refetch();
+    },
+    isRetrying: pets.isFetching || veterinarios.isFetching,
+    loadingLabel: 'Preparando o formulário…',
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

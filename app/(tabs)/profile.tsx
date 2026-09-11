@@ -56,15 +56,13 @@ export default function ProfileScreen() {
     ]);
   }
 
-  const estado = (
-    <AsyncBoundary
-      isLoading={tutor.isPending}
-      error={tutor.error}
-      onRetry={() => tutor.refetch()}
-      isRetrying={tutor.isFetching}
-      loadingLabel="Carregando seu perfil…"
-    />
-  );
+  const estado = AsyncBoundary({
+    isLoading: tutor.isPending,
+    error: tutor.error,
+    onRetry: () => tutor.refetch(),
+    isRetrying: tutor.isFetching,
+    loadingLabel: 'Carregando seu perfil…',
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

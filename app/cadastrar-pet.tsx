@@ -59,19 +59,17 @@ export default function CadastrarPetScreen() {
     especies.isPending || racas.isPending || (editando && petExistente.isPending);
   const erro = especies.error ?? racas.error ?? (editando ? petExistente.error : null);
 
-  const estado = (
-    <AsyncBoundary
-      isLoading={carregando}
-      error={erro}
-      onRetry={() => {
-        void especies.refetch();
-        void racas.refetch();
-        if (editando) void petExistente.refetch();
-      }}
-      isRetrying={especies.isFetching || racas.isFetching}
-      loadingLabel="Preparando o formulário…"
-    />
-  );
+  const estado = AsyncBoundary({
+    isLoading: carregando,
+    error: erro,
+    onRetry: () => {
+      void especies.refetch();
+      void racas.refetch();
+      if (editando) void petExistente.refetch();
+    },
+    isRetrying: especies.isFetching || racas.isFetching,
+    loadingLabel: 'Preparando o formulário…',
+  });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
