@@ -240,10 +240,7 @@ estados vazios do aplicativo.
 
 ## 🎬 Vídeo de demonstração
 
-**https://youtu.be/COLOQUE-O-LINK-AQUI**
-
-> ⚠️ Substituir pelo link do vídeo da Sprint 3 antes da entrega. O link acima é
-> um lugar reservado — o vídeo da Sprint 1 não vale para esta entrega.
+** https://youtu.be/9Q5g4WaXCoA?feature=shared **
 
 O vídeo tem no máximo 5 minutos, é narrado e mostra: navegação entre as telas,
 autenticação (login e logout), a integração com a API acontecendo, e o
