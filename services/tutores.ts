@@ -1,4 +1,4 @@
-import { apiRequest } from '@/lib/api/http';
+import { api } from '@/lib/api/http';
 import type { TutorRequest, TutorResponse } from '@/types/api';
 
 /**
@@ -10,10 +10,12 @@ import type { TutorRequest, TutorResponse } from '@/types/api';
  */
 
 /** Cadastro público. Exige `clinicaId`: o tutor se cadastra em uma clínica. */
-export function registerTutor(data: TutorRequest): Promise<TutorResponse> {
-  return apiRequest<TutorResponse>('/tutores', { method: 'POST', body: data, auth: false });
+export async function registerTutor(data: TutorRequest): Promise<TutorResponse> {
+  const response = await api.post<TutorResponse>('/tutores', data, { skipAuth: true });
+  return response.data;
 }
 
-export function getTutorMe(): Promise<TutorResponse> {
-  return apiRequest<TutorResponse>('/tutor/me');
+export async function getTutorMe(): Promise<TutorResponse> {
+  const { data } = await api.get<TutorResponse>('/tutor/me');
+  return data;
 }

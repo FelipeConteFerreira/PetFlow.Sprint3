@@ -1,4 +1,4 @@
-import { apiRequest, buildQuery } from '@/lib/api/http';
+import { api } from '@/lib/api/http';
 import type {
   AgendamentoRequest,
   AgendamentoResponse,
@@ -20,33 +20,35 @@ import type {
 const TAMANHO_PAGINA = 100;
 
 export async function listAgendamentos(page: PageParams = {}): Promise<AgendamentoResponse[]> {
-  const result = await apiRequest<SpringPage<AgendamentoResponse>>(
-    `/tutor/agendamentos${buildQuery({ page: page.page ?? 0, size: page.size ?? TAMANHO_PAGINA })}`
-  );
-  return result.content ?? [];
+  const { data } = await api.get<SpringPage<AgendamentoResponse>>('/tutor/agendamentos', {
+    params: { page: page.page ?? 0, size: page.size ?? TAMANHO_PAGINA },
+  });
+  return data.content ?? [];
 }
 
-export function getAgendamento(id: number): Promise<AgendamentoResponse> {
-  return apiRequest<AgendamentoResponse>(`/tutor/agendamentos/${id}`);
+export async function getAgendamento(id: number): Promise<AgendamentoResponse> {
+  const { data } = await api.get<AgendamentoResponse>(`/tutor/agendamentos/${id}`);
+  return data;
 }
 
 /** O `petId` é conferido contra os pets do tutor: pet de outro dono dá 404. */
-export function createAgendamento(data: AgendamentoRequest): Promise<AgendamentoResponse> {
-  return apiRequest<AgendamentoResponse>('/tutor/agendamentos', { method: 'POST', body: data });
+export async function createAgendamento(
+  payload: AgendamentoRequest
+): Promise<AgendamentoResponse> {
+  const { data } = await api.post<AgendamentoResponse>('/tutor/agendamentos', payload);
+  return data;
 }
 
 /** Remarcação: mesma consulta, nova data e hora. */
-export function updateAgendamento(
+export async function updateAgendamento(
   id: number,
-  data: AgendamentoRequest
+  payload: AgendamentoRequest
 ): Promise<AgendamentoResponse> {
-  return apiRequest<AgendamentoResponse>(`/tutor/agendamentos/${id}`, {
-    method: 'PUT',
-    body: data,
-  });
+  const { data } = await api.put<AgendamentoResponse>(`/tutor/agendamentos/${id}`, payload);
+  return data;
 }
 
 /** Cancelamento. A API muda o status para CANCELADO e responde 204. */
-export function cancelarAgendamento(id: number): Promise<void> {
-  return apiRequest<void>(`/tutor/agendamentos/${id}`, { method: 'DELETE' });
+export async function cancelarAgendamento(id: number): Promise<void> {
+  await api.delete(`/tutor/agendamentos/${id}`);
 }

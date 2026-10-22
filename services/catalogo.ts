@@ -1,4 +1,4 @@
-import { apiRequest, buildQuery } from '@/lib/api/http';
+import { api } from '@/lib/api/http';
 import type {
   ClinicaPublicaResponse,
   EspecieResponse,
@@ -22,25 +22,26 @@ import type {
 const TAMANHO_CATALOGO = 200;
 
 export async function listEspecies(): Promise<EspecieResponse[]> {
-  const r = await apiRequest<SpringPage<EspecieResponse>>(
-    `/tutor/catalogo/especies${buildQuery({ size: TAMANHO_CATALOGO })}`
-  );
-  return r.content ?? [];
+  const { data } = await api.get<SpringPage<EspecieResponse>>('/tutor/catalogo/especies', {
+    params: { size: TAMANHO_CATALOGO },
+  });
+  return data.content ?? [];
 }
 
 export async function listRacas(especieId?: number): Promise<RacaResponse[]> {
-  const r = await apiRequest<SpringPage<RacaResponse>>(
-    `/tutor/catalogo/racas${buildQuery({ especieId, size: 500 })}`
-  );
-  return r.content ?? [];
+  const { data } = await api.get<SpringPage<RacaResponse>>('/tutor/catalogo/racas', {
+    params: { especieId, size: 500 },
+  });
+  return data.content ?? [];
 }
 
 /** Os veterinários da clínica do próprio tutor — a clínica sai do token. */
 export async function listVeterinarios(): Promise<VeterinarioResponse[]> {
-  const r = await apiRequest<SpringPage<VeterinarioResponse>>(
-    `/tutor/catalogo/veterinarios${buildQuery({ size: TAMANHO_CATALOGO })}`
+  const { data } = await api.get<SpringPage<VeterinarioResponse>>(
+    '/tutor/catalogo/veterinarios',
+    { params: { size: TAMANHO_CATALOGO } }
   );
-  return r.content ?? [];
+  return data.content ?? [];
 }
 
 /**
@@ -51,9 +52,9 @@ export async function listVeterinarios(): Promise<VeterinarioResponse[]> {
  * id, nome e cidade, sem CNPJ nem contato.
  */
 export async function listClinicasPublicas(): Promise<ClinicaPublicaResponse[]> {
-  const r = await apiRequest<SpringPage<ClinicaPublicaResponse>>(
-    `/clinicas/publicas${buildQuery({ size: TAMANHO_CATALOGO })}`,
-    { auth: false }
-  );
-  return r.content ?? [];
+  const { data } = await api.get<SpringPage<ClinicaPublicaResponse>>('/clinicas/publicas', {
+    params: { size: TAMANHO_CATALOGO },
+    skipAuth: true,
+  });
+  return data.content ?? [];
 }

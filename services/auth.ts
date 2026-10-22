@@ -1,29 +1,14 @@
-import { apiRequest } from '@/lib/api/http';
+import { api } from '@/lib/api/http';
 import type { LoginRequest, LoginResponse } from '@/types/api';
 
-export function login(payload: LoginRequest): Promise<LoginResponse> {
-  return apiRequest<LoginResponse>('/auth/login', {
-    method: 'POST',
-    body: payload,
-    auth: false,
-  });
-}
-
-export function refresh(refreshToken: string): Promise<LoginResponse> {
-  return apiRequest<LoginResponse>('/auth/refresh', {
-    method: 'POST',
-    body: { refreshToken },
-    auth: false,
-  });
+export async function login(payload: LoginRequest): Promise<LoginResponse> {
+  const { data } = await api.post<LoginResponse>('/auth/login', payload, { skipAuth: true });
+  return data;
 }
 
 export async function logout(refreshToken: string): Promise<void> {
   try {
-    await apiRequest<void>('/auth/logout', {
-      method: 'POST',
-      body: { refreshToken },
-      auth: false,
-    });
+    await api.post('/auth/logout', { refreshToken }, { skipAuth: true });
   } catch {
     /* o logout local acontece de qualquer forma */
   }

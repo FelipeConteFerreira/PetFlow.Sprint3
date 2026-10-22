@@ -1,16 +1,39 @@
+import axios from 'axios';
+
 import { API_BASE_URL, API_TIMEOUT_MS } from '@/constants/api';
 import type { LoginResponse } from '@/types/api';
 
-import { getAuthSession, getAccessToken, saveAuthSession } from './auth-storage';
-import { ApiError, throwIfNotOk } from './errors';
+import { getAccessToken, getAuthSession, saveAuthSession } from './auth-storage';
+import { ApiError, toApiError } from './errors';
 
-type RequestOptions = {
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  body?: unknown;
-  auth?: boolean;
-  /** uso interno: evita repetir o refresh em looping */
-  _retry?: boolean;
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** Rota pública: não envia o token e não tenta renová-lo num 401. */
+    skipAuth?: boolean;
+    /** Uso interno: marca a requisição já repetida após renovar o token. */
+    _retry?: boolean;
+  }
+}
+
+const configBase = {
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT_MS,
+  headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
 };
+
+/**
+ * Instância única do Axios — todo o tráfego HTTP do app passa por ela.
+ *
+ * O token entra num interceptor de requisição e a renovação do token num
+ * interceptor de resposta, então nenhum service nem tela sabe que isso existe.
+ */
+export const api = axios.create(configBase);
+
+/**
+ * Cliente sem interceptors, só para `/auth/refresh`. Se a renovação passasse
+ * por `api`, um 401 dela mesma dispararia outra renovação, em looping.
+ */
+const refreshClient = axios.create(configBase);
 
 /**
  * Chamado quando a sessão não pode mais ser renovada.
@@ -31,16 +54,11 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!session?.refreshToken) return null;
 
   try {
-    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
+    const { data } = await refreshClient.post<LoginResponse>('/auth/refresh', {
+      refreshToken: session.refreshToken,
     });
-    if (!res.ok) return null;
-
-    const renovada = (await res.json()) as LoginResponse;
-    await saveAuthSession(renovada);
-    return renovada.accessToken;
+    await saveAuthSession(data);
+    return data.accessToken;
   } catch {
     return null;
   }
@@ -55,76 +73,35 @@ function ensureRefresh(): Promise<string | null> {
   return refreshInFlight;
 }
 
-export function buildQuery(params: Record<string, unknown>): string {
-  const entries = Object.entries(params).filter(
-    ([, v]) => v !== undefined && v !== null && v !== ''
-  );
-  if (entries.length === 0) return '';
-  return '?' + entries.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
-}
-
-export async function apiRequest<T>(
-  path: string,
-  { method = 'GET', body, auth = true, _retry = false }: RequestOptions = {}
-): Promise<T> {
-  const headers: Record<string, string> = { Accept: 'application/json' };
-
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
-
-  if (auth) {
+api.interceptors.request.use(async (config) => {
+  if (!config.skipAuth) {
     const token = await getAccessToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
-  const controller = new AbortController();
-  let timedOut = false;
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, API_TIMEOUT_MS);
+api.interceptors.response.use(
+  (response) => response,
+  async (error: unknown) => {
+    if (!axios.isAxiosError(error)) throw error;
 
-  try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      method,
-      headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      signal: controller.signal,
-    });
+    const { config } = error;
+    const expirou = error.response?.status === 401 && config && !config.skipAuth;
 
-    // Token expirado: renova uma vez e repete a requisição original.
-    if (res.status === 401 && auth && !_retry) {
-      const novoToken = await ensureRefresh();
-      if (novoToken) {
-        clearTimeout(timeout);
-        return apiRequest<T>(path, { method, body, auth, _retry: true });
+    if (expirou) {
+      // Token expirado: renova uma vez e repete a requisição original.
+      if (!config._retry) {
+        const novoToken = await ensureRefresh();
+        if (novoToken) {
+          config._retry = true;
+          return api.request(config);
+        }
       }
       onUnauthorized?.();
       throw new ApiError('Sua sessão expirou. Entre novamente.', 401);
     }
 
-    if (res.status === 401 && auth) {
-      onUnauthorized?.();
-      throw new ApiError('Sua sessão expirou. Entre novamente.', 401);
-    }
-
-    await throwIfNotOk(res);
-
-    if (res.status === 204) return undefined as T;
-
-    const text = await res.text();
-    if (!text) return undefined as T;
-    return JSON.parse(text) as T;
-  } catch (err) {
-    if (timedOut) {
-      throw new Error(
-        'A API não respondeu a tempo. O servidor pode estar iniciando — tente de novo em alguns segundos.'
-      );
-    }
-    if (err instanceof TypeError) {
-      throw new Error('Sem conexão com a API. Verifique a internet ou o endereço do servidor.');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeout);
+    throw toApiError(error);
   }
-}
+);

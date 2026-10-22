@@ -1,4 +1,4 @@
-import { apiRequest, buildQuery } from '@/lib/api/http';
+import { api } from '@/lib/api/http';
 import type {
   AplicacaoVacinaResponse,
   ConsultaResponse,
@@ -24,55 +24,53 @@ import type {
 const TAMANHO_PAGINA = 100;
 
 export async function listPets(page: PageParams = {}): Promise<PetResponse[]> {
-  const result = await apiRequest<SpringPage<PetResponse>>(
-    `/tutor/pets${buildQuery({ page: page.page ?? 0, size: page.size ?? TAMANHO_PAGINA })}`
-  );
-  return result.content ?? [];
+  const { data } = await api.get<SpringPage<PetResponse>>('/tutor/pets', {
+    params: { page: page.page ?? 0, size: page.size ?? TAMANHO_PAGINA },
+  });
+  return data.content ?? [];
 }
 
-export function getPet(id: number): Promise<PetResponse> {
-  return apiRequest<PetResponse>(`/tutor/pets/${id}`);
+export async function getPet(id: number): Promise<PetResponse> {
+  const { data } = await api.get<PetResponse>(`/tutor/pets/${id}`);
+  return data;
 }
 
-export function createPet(data: PetDoTutorRequest): Promise<PetResponse> {
-  return apiRequest<PetResponse>('/tutor/pets', { method: 'POST', body: data });
+export async function createPet(payload: PetDoTutorRequest): Promise<PetResponse> {
+  const { data } = await api.post<PetResponse>('/tutor/pets', payload);
+  return data;
 }
 
-export function updatePet(id: number, data: PetDoTutorRequest): Promise<PetResponse> {
-  return apiRequest<PetResponse>(`/tutor/pets/${id}`, { method: 'PUT', body: data });
+export async function updatePet(id: number, payload: PetDoTutorRequest): Promise<PetResponse> {
+  const { data } = await api.put<PetResponse>(`/tutor/pets/${id}`, payload);
+  return data;
 }
 
 /** DELETE aqui é inativação: o pet sai das listas do tutor e o histórico fica. */
-export function deletePet(id: number): Promise<void> {
-  return apiRequest<void>(`/tutor/pets/${id}`, { method: 'DELETE' });
+export async function deletePet(id: number): Promise<void> {
+  await api.delete(`/tutor/pets/${id}`);
 }
 
-export function getFichaTecnica(id: number): Promise<PetFichaTecnicaResponse> {
-  return apiRequest<PetFichaTecnicaResponse>(`/tutor/pets/${id}/ficha-tecnica`);
+export async function getFichaTecnica(id: number): Promise<PetFichaTecnicaResponse> {
+  const { data } = await api.get<PetFichaTecnicaResponse>(`/tutor/pets/${id}/ficha-tecnica`);
+  return data;
 }
 
 export async function listConsultasDoPet(
   id: number,
   page: PageParams = {}
 ): Promise<ConsultaResponse[]> {
-  const result = await apiRequest<SpringPage<ConsultaResponse>>(
-    `/tutor/pets/${id}/consultas${buildQuery({
-      page: page.page ?? 0,
-      size: page.size ?? TAMANHO_PAGINA,
-    })}`
-  );
-  return result.content ?? [];
+  const { data } = await api.get<SpringPage<ConsultaResponse>>(`/tutor/pets/${id}/consultas`, {
+    params: { page: page.page ?? 0, size: page.size ?? TAMANHO_PAGINA },
+  });
+  return data.content ?? [];
 }
 
 export async function listVacinasDoPet(
   id: number,
   page: PageParams = {}
 ): Promise<AplicacaoVacinaResponse[]> {
-  const result = await apiRequest<SpringPage<AplicacaoVacinaResponse>>(
-    `/tutor/pets/${id}/vacinas${buildQuery({
-      page: page.page ?? 0,
-      size: page.size ?? TAMANHO_PAGINA,
-    })}`
-  );
-  return result.content ?? [];
+  const { data } = await api.get<SpringPage<AplicacaoVacinaResponse>>(`/tutor/pets/${id}/vacinas`, {
+    params: { page: page.page ?? 0, size: page.size ?? TAMANHO_PAGINA },
+  });
+  return data.content ?? [];
 }
