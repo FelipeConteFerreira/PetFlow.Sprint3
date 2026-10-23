@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /** Cabeçalho das telas empilhadas: voltar, título e uma ação opcional. */
 export function ScreenHeader({
@@ -14,12 +14,12 @@ export function ScreenHeader({
   subtitle?: string;
   action?: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void };
 }) {
-  const router = useRouter();
+  const navigation = useAppNavigation();
 
   return (
     <View style={styles.header}>
       <Pressable
-        onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+        onPress={navigation.voltar}
         style={({ pressed }) => [styles.icone, pressed && styles.pressionado]}
         accessibilityLabel="Voltar"
         hitSlop={12}>

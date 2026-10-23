@@ -1,66 +1,30 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AgendamentoCard } from '@/components/agendamento-card';
 import { ErrorState } from '@/components/ui/screen-state';
 import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
-import { useAgendamentos } from '@/hooks/use-agendamentos';
-import { usePets } from '@/hooks/use-pets';
-import { useTutorMe } from '@/hooks/use-tutor';
-import { emojiDoPet, hojeISO, porDataHora, resumoDoPet } from '@/lib/formatters';
+import { useHome } from '@/hooks/screens/use-home';
+import { emojiDoPet, resumoDoPet } from '@/lib/formatters';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /**
- * Início — tudo o que aparece aqui vem dos hooks, nada de armazenamento local.
- *
- * As três fontes são as mesmas das outras abas (`/tutor/me`, `/tutor/pets`,
- * `/tutor/agendamentos`), então o cache do TanStack Query já as tem quentes
- * quando o usuário chega aqui vindo de outra aba — e uma escrita em qualquer
- * tela reflete aqui pela invalidação, sem esta tela saber que houve escrita.
+ * Início — só desenho. Os números e listas já chegam calculados do `useHome`,
+ * e cada atalho é um verbo de navegação.
  */
-export default function HomeScreen() {
-  const router = useRouter();
-  const tutor = useTutorMe();
-  const pets = usePets();
-  const agenda = useAgendamentos();
+export function HomeScreen() {
+  const navigation = useAppNavigation();
+  const home = useHome();
+  const { pets, proximas, carregando } = home;
 
-  const hoje = hojeISO();
-
-  const proximas = useMemo(
-    () =>
-      [...(agenda.data ?? [])]
-        .filter((a) => a.dtAgendamento >= hoje && a.status !== 'CANCELADO')
-        .sort(porDataHora),
-    [agenda.data, hoje]
-  );
-
-  const carregando = tutor.isPending || pets.isPending || agenda.isPending;
-  const atualizando = tutor.isFetching || pets.isFetching || agenda.isFetching;
-  const erro = tutor.error ?? pets.error ?? agenda.error;
-
-  function recarregar() {
-    void tutor.refetch();
-    void pets.refetch();
-    void agenda.refetch();
-  }
-
-  // Só o erro fecha a tela inteira. O carregando aparece nos números, para que
-  // o cabeçalho não pisque a cada volta para a aba.
-  if (erro && !carregando) {
+  if (home.erro) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <ErrorState
-          message={erro instanceof Error ? erro.message : 'Erro inesperado.'}
-          onRetry={recarregar}
-          retrying={atualizando}
-        />
+        <ErrorState message={home.erro} onRetry={home.recarregar} retrying={home.atualizando} />
       </SafeAreaView>
     );
   }
-
-  const primeiroNome = tutor.data?.nome?.split(' ')[0];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -69,8 +33,8 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
-            refreshing={atualizando}
-            onRefresh={recarregar}
+            refreshing={home.atualizando}
+            onRefresh={home.recarregar}
             tintColor={PetFlowColors.primary}
             colors={[PetFlowColors.primary]}
           />
@@ -79,7 +43,7 @@ export default function HomeScreen() {
           <View style={styles.cabecalhoTexto}>
             <Text style={styles.marca}>PetFlow</Text>
             <Text style={styles.saudacao}>
-              {primeiroNome ? `Olá, ${primeiroNome}! 👋` : 'Olá! 👋'}
+              {home.primeiroNome ? `Olá, ${home.primeiroNome}! 👋` : 'Olá! 👋'}
             </Text>
             <Text style={styles.subtitulo}>
               {proximas.length
@@ -90,7 +54,7 @@ export default function HomeScreen() {
           <Pressable
             style={({ pressed }) => [styles.avatar, shadow(1), pressed && styles.pressionado]}
             accessibilityLabel="Perfil"
-            onPress={() => router.push('/profile')}>
+            onPress={() => navigation.irParaAba('Perfil')}>
             <MaterialCommunityIcons name="paw" size={22} color="#fff" />
           </Pressable>
         </View>
@@ -99,47 +63,47 @@ export default function HomeScreen() {
           <Numero
             icone="paw"
             rotulo="Pets"
-            valor={carregando ? '—' : String(pets.data?.length ?? 0)}
+            valor={carregando ? '—' : String(pets.length)}
             cor={PetFlowColors.primary}
-            onPress={() => router.push('/pets')}
+            onPress={() => navigation.irParaAba('Pets')}
           />
           <Numero
             icone="calendar"
             rotulo="Próximas"
             valor={carregando ? '—' : String(proximas.length)}
             cor={PetFlowColors.blue}
-            onPress={() => router.push('/agendamentos')}
+            onPress={() => navigation.irParaAba('Agenda')}
           />
           <Numero
             icone="time"
             rotulo="Hoje"
-            valor={
-              carregando ? '—' : String(proximas.filter((a) => a.dtAgendamento === hoje).length)
-            }
+            valor={carregando ? '—' : String(home.totalHoje)}
             cor={PetFlowColors.orange}
-            onPress={() => router.push('/agendamentos')}
+            onPress={() => navigation.irParaAba('Agenda')}
           />
         </View>
 
         <Secao
           titulo="Próxima consulta"
-          acao={proximas.length > 1 ? { rotulo: 'Ver agenda', onPress: () => router.push('/agendamentos') } : undefined}>
+          acao={
+            proximas.length > 1
+              ? { rotulo: 'Ver agenda', onPress: () => navigation.irParaAba('Agenda') }
+              : undefined
+          }>
           {proximas.length ? (
             <AgendamentoCard
               agendamento={proximas[0]}
-              onPress={() =>
-                router.push({ pathname: '/agendar', params: { id: String(proximas[0].id) } })
-              }
+              onPress={() => navigation.remarcarConsulta(proximas[0].id)}
             />
           ) : (
             <Vazio
               texto={
-                pets.data?.length
+                pets.length
                   ? 'Nenhuma consulta marcada. Que tal agendar um check-up?'
                   : 'Cadastre um pet para começar a marcar consultas.'
               }
-              acaoRotulo={pets.data?.length ? 'Marcar consulta' : 'Cadastrar pet'}
-              onAcao={() => router.push(pets.data?.length ? '/agendar' : '/cadastrar-pet')}
+              acaoRotulo={pets.length ? 'Marcar consulta' : 'Cadastrar pet'}
+              onAcao={pets.length ? navigation.marcarConsulta : navigation.novoPet}
             />
           )}
         </Secao>
@@ -147,19 +111,19 @@ export default function HomeScreen() {
         <Secao
           titulo="Seus pets"
           acao={
-            pets.data?.length ? { rotulo: 'Ver todos', onPress: () => router.push('/pets') } : undefined
+            pets.length
+              ? { rotulo: 'Ver todos', onPress: () => navigation.irParaAba('Pets') }
+              : undefined
           }>
-          {pets.data?.length ? (
+          {pets.length ? (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.petsRolagem}>
-              {pets.data.slice(0, 6).map((pet) => (
+              {pets.slice(0, 6).map((pet) => (
                 <Pressable
                   key={pet.id}
-                  onPress={() =>
-                    router.push({ pathname: '/pet/[id]', params: { id: String(pet.id) } })
-                  }
+                  onPress={() => navigation.abrirPet(pet.id)}
                   style={({ pressed }) => [
                     styles.petCartao,
                     shadow(1),
@@ -179,7 +143,7 @@ export default function HomeScreen() {
             <Vazio
               texto="Nenhum pet cadastrado ainda. É por aqui que tudo começa."
               acaoRotulo="Cadastrar pet"
-              onAcao={() => router.push('/cadastrar-pet')}
+              onAcao={navigation.novoPet}
             />
           )}
         </Secao>
@@ -189,13 +153,13 @@ export default function HomeScreen() {
             icone="add-circle"
             rotulo="Cadastrar pet"
             cor={PetFlowColors.primary}
-            onPress={() => router.push('/cadastrar-pet')}
+            onPress={navigation.novoPet}
           />
           <Atalho
             icone="calendar"
             rotulo="Marcar consulta"
             cor={PetFlowColors.blue}
-            onPress={() => router.push('/agendar')}
+            onPress={navigation.marcarConsulta}
           />
         </View>
       </ScrollView>

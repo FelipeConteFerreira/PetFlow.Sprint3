@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +7,7 @@ import { PrimaryButton } from '@/components/ui/form';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { AsyncBoundary } from '@/components/ui/screen-state';
 import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { usePetDetalhe } from '@/hooks/screens/use-pet-detalhe';
 import {
   PET_STATUS_LABEL,
   PORTE_LABEL,
@@ -16,34 +16,23 @@ import {
   formatarData,
   idadeDoPet,
 } from '@/lib/formatters';
-import { getErrorMessage } from '@/lib/api/errors';
-import {
-  useConsultasDoPet,
-  useDeletePet,
-  usePetFichaTecnica,
-  useVacinasDoPet,
-} from '@/hooks/use-pets';
+import type { RootStackParamList } from '@/navigation/types';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /**
  * Detalhe do pet, com as duas saídas de escrita: editar e remover.
  *
- * A ficha técnica é um endpoint próprio (`/ficha-tecnica`) que já traz a
- * espécie junto — por isso a tela lê dela e não do `GET /tutor/pets/{id}`.
- *
- * Consultas e vacinas são leitura do histórico que a clínica registrou. Ficam
- * abaixo, e cada uma diz o que significa estar vazia: pet novo não tem
- * histórico, e isso não é erro.
+ * Só desenho — a ficha, o histórico e a remoção vêm do `usePetDetalhe`. Cada
+ * lista do histórico diz o que significa estar vazia: pet novo não tem
+ * consultas nem vacinas, e isso não é erro.
  */
-export default function PetDetalheScreen() {
-  const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const petId = Number(id);
+export function PetDetalheScreen() {
+  const navigation = useAppNavigation();
+  const { params } = useRoute<RouteProp<RootStackParamList, 'PetDetalhe'>>();
+  const petId = params.petId;
 
-  const { data: pet, isPending, isFetching, error, refetch } = usePetFichaTecnica(petId);
-  const consultas = useConsultasDoPet(petId);
-  const vacinas = useVacinasDoPet(petId);
-  const remover = useDeletePet();
-  const [erroRemocao, setErroRemocao] = useState<string | null>(null);
+  const detalhe = usePetDetalhe(petId, navigation.voltar);
+  const { pet, consultas, vacinas } = detalhe;
 
   /**
    * Confirmação antes do DELETE. A API inativa em vez de apagar, e o texto diz
@@ -56,26 +45,16 @@ export default function PetDetalheScreen() {
       'Ele sai da sua lista e das suas próximas consultas. O histórico clínico continua guardado na clínica.',
       [
         { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: () => {
-            setErroRemocao(null);
-            remover.mutate(petId, {
-              onSuccess: () => router.back(),
-              onError: (err) => setErroRemocao(getErrorMessage(err)),
-            });
-          },
-        },
+        { text: 'Remover', style: 'destructive', onPress: detalhe.remover },
       ]
     );
   }
 
   const estado = AsyncBoundary({
-    isLoading: isPending,
-    error,
-    onRetry: () => refetch(),
-    isRetrying: isFetching,
+    isLoading: detalhe.carregando,
+    error: detalhe.erro,
+    onRetry: detalhe.recarregar,
+    isRetrying: detalhe.atualizando,
     loadingLabel: 'Carregando a ficha…',
   });
 
@@ -88,8 +67,7 @@ export default function PetDetalheScreen() {
             ? {
                 icon: 'create-outline',
                 label: 'Editar',
-                onPress: () =>
-                  router.push({ pathname: '/cadastrar-pet', params: { id: String(petId) } }),
+                onPress: () => navigation.editarPet(petId),
               }
             : undefined
         }
@@ -176,22 +154,22 @@ export default function PetDetalheScreen() {
               )}
             </Secao>
 
-            {erroRemocao ? <Text style={styles.erroRemocao}>{erroRemocao}</Text> : null}
+            {detalhe.erroRemocao ? (
+              <Text style={styles.erroRemocao}>{detalhe.erroRemocao}</Text>
+            ) : null}
 
             <View style={styles.acoes}>
               <PrimaryButton
                 label="Editar dados"
                 icon="create-outline"
                 tone="neutro"
-                onPress={() =>
-                  router.push({ pathname: '/cadastrar-pet', params: { id: String(petId) } })
-                }
+                onPress={() => navigation.editarPet(petId)}
               />
               <PrimaryButton
                 label="Remover pet"
                 icon="trash-outline"
                 tone="danger"
-                loading={remover.isPending}
+                loading={detalhe.removendo}
                 onPress={confirmarRemocao}
               />
             </View>

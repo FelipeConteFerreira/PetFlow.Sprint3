@@ -1,42 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
 import { Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AgendamentoCard } from '@/components/agendamento-card';
 import { AsyncBoundary, EmptyState } from '@/components/ui/screen-state';
 import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
-import { useAgendamentos, useCancelarAgendamento } from '@/hooks/use-agendamentos';
-import { usePets } from '@/hooks/use-pets';
-import { getErrorMessage } from '@/lib/api/errors';
-import { hojeISO, porDataHora } from '@/lib/formatters';
+import { useAgendaScreen } from '@/hooks/screens/use-agenda-screen';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 import type { AgendamentoResponse } from '@/types/api';
 
 /**
- * A agenda do tutor — `GET /api/tutor/agendamentos`.
- *
- * Esta aba era "Lembretes", guardados em AsyncStorage e sem nenhum equivalente
- * no backend. Virou o que a API realmente tem: as consultas marcadas dos pets
- * do próprio tutor, com marcar, remarcar e cancelar.
+ * A agenda do tutor — só desenho. Filtro, lista e cancelamento vêm do
+ * `useAgendaScreen`; aqui fica apenas o diálogo de confirmação.
  */
-export default function AgendamentosScreen() {
-  const router = useRouter();
-  const { data: agendamentos, isPending, isFetching, error, refetch } = useAgendamentos();
-  const pets = usePets();
-  const cancelar = useCancelarAgendamento();
-  const [erroAcao, setErroAcao] = useState<string | null>(null);
-  const [filtro, setFiltro] = useState<'proximos' | 'todos'>('proximos');
-
-  const hoje = hojeISO();
-
-  const visiveis = useMemo(() => {
-    const lista = [...(agendamentos ?? [])].sort(porDataHora);
-    if (filtro === 'todos') return lista.reverse();
-    return lista.filter((a) => a.dtAgendamento >= hoje && a.status !== 'CANCELADO');
-  }, [agendamentos, filtro, hoje]);
-
-  const semPets = !pets.isPending && (pets.data?.length ?? 0) === 0;
+export function AgendaScreen() {
+  const navigation = useAppNavigation();
+  const agenda = useAgendaScreen();
 
   function confirmarCancelamento(agendamento: AgendamentoResponse) {
     Alert.alert(
@@ -47,22 +26,17 @@ export default function AgendamentosScreen() {
         {
           text: 'Cancelar consulta',
           style: 'destructive',
-          onPress: () => {
-            setErroAcao(null);
-            cancelar.mutate(agendamento.id, {
-              onError: (err) => setErroAcao(getErrorMessage(err)),
-            });
-          },
+          onPress: () => agenda.cancelar(agendamento.id),
         },
       ]
     );
   }
 
   const estado = AsyncBoundary({
-    isLoading: isPending,
-    error,
-    onRetry: () => refetch(),
-    isRetrying: isFetching,
+    isLoading: agenda.carregando,
+    error: agenda.erro,
+    onRetry: agenda.recarregar,
+    isRetrying: agenda.atualizando,
     loadingLabel: 'Carregando sua agenda…',
   });
 
@@ -77,7 +51,7 @@ export default function AgendamentosScreen() {
         <Pressable
           style={({ pressed }) => [styles.adicionar, shadow(1), pressed && styles.pressionado]}
           accessibilityLabel="Marcar consulta"
-          onPress={() => router.push('/agendar')}>
+          onPress={navigation.marcarConsulta}>
           <Ionicons name="add" size={24} color="#fff" />
         </Pressable>
       </View>
@@ -86,47 +60,48 @@ export default function AgendamentosScreen() {
         {(['proximos', 'todos'] as const).map((opcao) => (
           <Pressable
             key={opcao}
-            onPress={() => setFiltro(opcao)}
-            style={[styles.filtro, filtro === opcao && styles.filtroAtivo]}>
-            <Text style={[styles.filtroTexto, filtro === opcao && styles.filtroTextoAtivo]}>
+            onPress={() => agenda.setFiltro(opcao)}
+            style={[styles.filtro, agenda.filtro === opcao && styles.filtroAtivo]}>
+            <Text
+              style={[styles.filtroTexto, agenda.filtro === opcao && styles.filtroTextoAtivo]}>
               {opcao === 'proximos' ? 'Próximas' : 'Histórico'}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      {erroAcao ? <Text style={styles.erroAcao}>{erroAcao}</Text> : null}
+      {agenda.erroAcao ? <Text style={styles.erroAcao}>{agenda.erroAcao}</Text> : null}
 
       {estado ?? (
         <FlatList
-          data={visiveis}
+          data={agenda.visiveis}
           keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={visiveis.length ? styles.lista : styles.listaVazia}
+          contentContainerStyle={agenda.visiveis.length ? styles.lista : styles.listaVazia}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={isFetching}
-              onRefresh={refetch}
+              refreshing={agenda.atualizando}
+              onRefresh={agenda.recarregar}
               tintColor={PetFlowColors.primary}
               colors={[PetFlowColors.primary]}
             />
           }
           ListEmptyComponent={
-            semPets ? (
+            agenda.semPets ? (
               <EmptyState
                 emoji="🐾"
                 title="Cadastre um pet primeiro"
                 description="A agenda mostra as consultas dos seus pets. Cadastre um pet para poder marcar a primeira."
                 actionLabel="Cadastrar pet"
-                onAction={() => router.push('/cadastrar-pet')}
+                onAction={navigation.novoPet}
               />
-            ) : filtro === 'proximos' ? (
+            ) : agenda.filtro === 'proximos' ? (
               <EmptyState
                 emoji="📅"
                 title="Nenhuma consulta marcada"
                 description="Você não tem consultas futuras. Toque em marcar consulta para escolher pet, veterinário e horário."
                 actionLabel="Marcar consulta"
-                onAction={() => router.push('/agendar')}
+                onAction={navigation.marcarConsulta}
               />
             ) : (
               <EmptyState
@@ -139,9 +114,7 @@ export default function AgendamentosScreen() {
           renderItem={({ item }) => (
             <AgendamentoCard
               agendamento={item}
-              onPress={() =>
-                router.push({ pathname: '/agendar', params: { id: String(item.id) } })
-              }
+              onPress={() => navigation.remarcarConsulta(item.id)}
               onCancelar={() => confirmarCancelamento(item)}
             />
           )}

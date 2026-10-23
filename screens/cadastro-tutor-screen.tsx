@@ -1,82 +1,27 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChipSelect, Field, FormError, Input, PrimaryButton } from '@/components/ui/form';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
-import { useAuth } from '@/contexts/auth-context';
-import { useClinicasPublicas } from '@/hooks/use-catalogo';
-import { getErrorMessage } from '@/lib/api/errors';
+import { useCadastroTutorForm } from '@/hooks/forms/use-cadastro-tutor-form';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 
-/**
- * Cadastro do tutor.
- *
- * A clínica é obrigatória: `POST /api/tutores` exige `clinicaId` e o tutor se
- * cadastra *em uma clínica*, que é quem vai atendê-lo. A lista vem de
- * `GET /api/clinicas/publicas`, a única leitura da API que não pede token —
- * sem ela esta tela não teria como descobrir o número e o cadastro falhava
- * com 422.
- */
-export default function CadastroTutorScreen() {
-  const router = useRouter();
-  const { signUp } = useAuth();
-  const clinicas = useClinicasPublicas();
-
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [senha, setSenha] = useState('');
-  const [confirmacao, setConfirmacao] = useState('');
-  const [clinicaEscolhida, setClinicaEscolhida] = useState<number | undefined>();
-
-  const [erros, setErros] = useState<Record<string, string>>({});
-  const [erroEnvio, setErroEnvio] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
-
-  /**
-   * Uma clínica só na lista já vale como escolhida — derivado, e não copiado
-   * para o estado por um efeito: sincronizar estado com dado que veio da API é
-   * o que gera renderização em cascata.
-   */
-  const clinicaId =
-    clinicaEscolhida ?? (clinicas.data?.length === 1 ? clinicas.data[0].id : undefined);
-
-  function validar(): boolean {
-    const novos: Record<string, string> = {};
-    if (!nome.trim()) novos.nome = 'Diga como podemos te chamar.';
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) novos.email = 'Informe um e-mail válido.';
-    if (senha.length < 6) novos.senha = 'A senha precisa de pelo menos 6 caracteres.';
-    if (senha !== confirmacao) novos.confirmacao = 'A confirmação não bate com a senha.';
-    if (!clinicaId) novos.clinicaId = 'Escolha a clínica que atende o seu pet.';
-    setErros(novos);
-    return Object.keys(novos).length === 0;
-  }
-
-  async function cadastrar() {
-    setErroEnvio(null);
-    if (!validar()) return;
-
-    setEnviando(true);
-    try {
-      // signUp cadastra e já faz login: o guarda de rota leva para as abas.
-      await signUp({
-        nome: nome.trim(),
-        email: email.trim().toLowerCase(),
-        senha,
-        clinicaId: clinicaId as number,
-        telefone: telefone.replace(/\D/g, '') || undefined,
-        canalPreferencial: 'APP',
-      });
-      router.replace('/(tabs)');
-    } catch (err) {
-      setErroEnvio(getErrorMessage(err));
-    } finally {
-      setEnviando(false);
-    }
-  }
+/** Só desenho: campos, escolha da clínica, validação e envio moram no hook. */
+export function CadastroTutorScreen() {
+  const navigation = useAppNavigation();
+  const {
+    values,
+    setValue,
+    errors,
+    clinicas,
+    clinicaId,
+    escolherClinica,
+    submit,
+    isSubmitting,
+    submitError,
+  } = useCadastroTutorForm();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -99,44 +44,44 @@ export default function CadastroTutorScreen() {
             </Text>
           </View>
 
-          <Field label="Seu nome" required error={erros.nome}>
+          <Field label="Seu nome" required error={errors.nome}>
             <Input
-              value={nome}
-              onChangeText={setNome}
+              value={values.nome}
+              onChangeText={(texto) => setValue('nome', texto)}
               placeholder="Maria Silva"
               autoCapitalize="words"
-              invalid={!!erros.nome}
-              editable={!enviando}
+              invalid={!!errors.nome}
+              editable={!isSubmitting}
             />
           </Field>
 
-          <Field label="E-mail" required error={erros.email}>
+          <Field label="E-mail" required error={errors.email}>
             <Input
-              value={email}
-              onChangeText={setEmail}
+              value={values.email}
+              onChangeText={(texto) => setValue('email', texto)}
               placeholder="voce@email.com"
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
-              invalid={!!erros.email}
-              editable={!enviando}
+              invalid={!!errors.email}
+              editable={!isSubmitting}
             />
           </Field>
 
           <Field label="Telefone" hint="Opcional. A clínica usa para falar com você.">
             <Input
-              value={telefone}
-              onChangeText={setTelefone}
+              value={values.telefone}
+              onChangeText={(texto) => setValue('telefone', texto)}
               placeholder="(11) 99999-0000"
               keyboardType="phone-pad"
-              editable={!enviando}
+              editable={!isSubmitting}
             />
           </Field>
 
           <Field
             label="Sua clínica"
             required
-            error={erros.clinicaId}
+            error={errors.clinicaId}
             hint="É ela que atende os seus pets e mantém o seu cadastro.">
             {clinicas.isPending ? (
               <Text style={styles.aviso}>Carregando clínicas…</Text>
@@ -152,7 +97,7 @@ export default function CadastroTutorScreen() {
                   detalhe: [c.cidade, c.estado].filter(Boolean).join(' · '),
                 }))}
                 valor={clinicaId}
-                onChange={setClinicaEscolhida}
+                onChange={escolherClinica}
                 scroll
               />
             ) : (
@@ -163,40 +108,40 @@ export default function CadastroTutorScreen() {
             )}
           </Field>
 
-          <Field label="Senha" required error={erros.senha}>
+          <Field label="Senha" required error={errors.senha}>
             <Input
-              value={senha}
-              onChangeText={setSenha}
+              value={values.senha}
+              onChangeText={(texto) => setValue('senha', texto)}
               placeholder="Pelo menos 6 caracteres"
               secureTextEntry
-              invalid={!!erros.senha}
-              editable={!enviando}
+              invalid={!!errors.senha}
+              editable={!isSubmitting}
             />
           </Field>
 
-          <Field label="Confirmar senha" required error={erros.confirmacao}>
+          <Field label="Confirmar senha" required error={errors.confirmacao}>
             <Input
-              value={confirmacao}
-              onChangeText={setConfirmacao}
+              value={values.confirmacao}
+              onChangeText={(texto) => setValue('confirmacao', texto)}
               placeholder="Repita a senha"
               secureTextEntry
-              invalid={!!erros.confirmacao}
-              editable={!enviando}
+              invalid={!!errors.confirmacao}
+              editable={!isSubmitting}
             />
           </Field>
 
-          <FormError message={erroEnvio} />
+          <FormError message={submitError} />
 
           <PrimaryButton
             label="Criar conta"
             icon="arrow-forward"
-            loading={enviando}
-            onPress={cadastrar}
+            loading={isSubmitting}
+            onPress={submit}
           />
 
           <View style={styles.rodape}>
             <Text style={styles.rodapeTexto}>Já tem conta? </Text>
-            <Text style={styles.rodapeLink} onPress={() => router.replace('/login')}>
+            <Text style={styles.rodapeLink} onPress={navigation.abrirLogin}>
               Entrar
             </Text>
           </View>

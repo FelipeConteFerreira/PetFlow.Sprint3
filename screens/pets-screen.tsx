@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +6,7 @@ import { PetCard } from '@/components/pet-card';
 import { AsyncBoundary, EmptyState } from '@/components/ui/screen-state';
 import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
 import { usePets } from '@/hooks/use-pets';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /**
  * Meus pets — lista vinda de `GET /api/tutor/pets`.
@@ -15,8 +15,8 @@ import { usePets } from '@/hooks/use-pets';
  * mão: quem traz o dado é o `usePets`, e quem atualiza depois de um cadastro,
  * de uma edição ou de uma remoção é a invalidação de cache das mutations.
  */
-export default function PetsScreen() {
-  const router = useRouter();
+export function PetsScreen() {
+  const navigation = useAppNavigation();
   const { data: pets, isPending, isFetching, error, refetch } = usePets();
 
   const estado = AsyncBoundary({
@@ -42,7 +42,7 @@ export default function PetsScreen() {
         <Pressable
           style={({ pressed }) => [styles.adicionar, shadow(1), pressed && styles.pressionado]}
           accessibilityLabel="Cadastrar pet"
-          onPress={() => router.push('/cadastrar-pet')}>
+          onPress={navigation.novoPet}>
           <Ionicons name="add" size={24} color="#fff" />
         </Pressable>
       </View>
@@ -66,15 +66,13 @@ export default function PetsScreen() {
               title="Nenhum pet por aqui ainda"
               description="Cadastre seu primeiro pet para acompanhar vacinas, consultas e agendamentos em um lugar só."
               actionLabel="Cadastrar pet"
-              onAction={() => router.push('/cadastrar-pet')}
+              onAction={navigation.novoPet}
             />
           }
           renderItem={({ item }) => (
             <PetCard
               pet={item}
-              onPress={() =>
-                router.push({ pathname: '/pet/[id]', params: { id: String(item.id) } })
-              }
+              onPress={() => navigation.abrirPet(item.id)}
             />
           )}
         />

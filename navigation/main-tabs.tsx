@@ -1,20 +1,21 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform } from 'react-native';
 
 import { PetFlowColors } from '@/constants/petflow';
+import { AgendaScreen } from '@/screens/agenda-screen';
+import { HomeScreen } from '@/screens/home-screen';
+import { PetsScreen } from '@/screens/pets-screen';
+import { ProfileScreen } from '@/screens/profile-screen';
 
-/**
- * As quatro abas do aplicativo do tutor.
- *
- * Não há mais escolha de perfil: as abas de clínica saíram junto com as telas
- * que dependiam de endpoints que um token de tutor não alcança. Sem esse
- * `userType` para consultar, o layout deixou de precisar carregar nada antes
- * de desenhar — e as abas param de piscar na abertura.
- */
-export default function TabLayout() {
+import type { TabParamList } from './types';
+
+const Tab = createBottomTabNavigator<TabParamList>();
+
+/** As quatro abas do aplicativo do tutor. */
+export function MainTabs() {
   return (
-    <Tabs
+    <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: PetFlowColors.primary,
@@ -27,15 +28,17 @@ export default function TabLayout() {
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
       }}>
-      <Tabs.Screen
-        name="index"
+      <Tab.Screen
+        name="Inicio"
+        component={HomeScreen}
         options={{
           title: 'Início',
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="pets"
+      <Tab.Screen
+        name="Pets"
+        component={PetsScreen}
         options={{
           title: 'Meus pets',
           tabBarIcon: ({ color, size }) => (
@@ -43,8 +46,9 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="agendamentos"
+      <Tab.Screen
+        name="Agenda"
+        component={AgendaScreen}
         options={{
           title: 'Agenda',
           tabBarIcon: ({ color, size }) => (
@@ -52,8 +56,9 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="profile"
+      <Tab.Screen
+        name="Perfil"
+        component={ProfileScreen}
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
@@ -61,6 +66,6 @@ export default function TabLayout() {
           ),
         }}
       />
-    </Tabs>
+    </Tab.Navigator>
   );
 }

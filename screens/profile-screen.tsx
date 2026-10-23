@@ -1,66 +1,36 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AsyncBoundary } from '@/components/ui/screen-state';
 import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
-import { useAuth } from '@/contexts/auth-context';
-import { useAgendamentos } from '@/hooks/use-agendamentos';
-import { usePets } from '@/hooks/use-pets';
-import { useTutorMe } from '@/hooks/use-tutor';
-import { AVATARES, getAvatar, setAvatar } from '@/lib/preferences';
+import { usePerfil } from '@/hooks/screens/use-perfil';
 import { formatarData } from '@/lib/formatters';
+import { AVATARES } from '@/lib/preferences';
 
 /**
- * Perfil — os dados vêm de `GET /api/tutor/me`.
+ * Perfil — só desenho. Os dados vêm de `GET /api/tutor/me`, via `usePerfil`.
  *
  * Não há edição de cadastro aqui: alterar tutor é `PUT /api/tutores/{id}`, que
  * é a API de gestão da clínica e responde 403 para um token de tutor. Em vez
  * de uma tela que falharia ao salvar, o app diz onde a alteração é feita.
- *
- * O avatar é a única coisa que esta tela guarda no aparelho, porque é a única
- * que o servidor não tem.
  */
-export default function ProfileScreen() {
-  const router = useRouter();
-  const { signOut } = useAuth();
-  const tutor = useTutorMe();
-  const pets = usePets();
-  const agenda = useAgendamentos();
-
-  const [avatar, setAvatarLocal] = useState(AVATARES[0]);
-  const [escolhendoAvatar, setEscolhendoAvatar] = useState(false);
-
-  useEffect(() => {
-    void getAvatar().then(setAvatarLocal);
-  }, []);
-
-  function escolherAvatar(emoji: string) {
-    setAvatarLocal(emoji);
-    setEscolhendoAvatar(false);
-    void setAvatar(emoji);
-  }
+export function ProfileScreen() {
+  const perfil = usePerfil();
+  const { tutor } = perfil;
 
   function confirmarSaida() {
     Alert.alert('Sair da conta?', 'Você precisará entrar de novo com e-mail e senha.', [
       { text: 'Ficar', style: 'cancel' },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: () => {
-          void signOut().then(() => router.replace('/login'));
-        },
-      },
+      { text: 'Sair', style: 'destructive', onPress: perfil.sair },
     ]);
   }
 
   const estado = AsyncBoundary({
-    isLoading: tutor.isPending,
-    error: tutor.error,
-    onRetry: () => tutor.refetch(),
-    isRetrying: tutor.isFetching,
+    isLoading: perfil.carregando,
+    error: perfil.erro,
+    onRetry: perfil.recarregar,
+    isRetrying: perfil.atualizando,
     loadingLabel: 'Carregando seu perfil…',
   });
 
@@ -72,33 +42,36 @@ export default function ProfileScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
-              refreshing={tutor.isFetching}
-              onRefresh={tutor.refetch}
+              refreshing={perfil.atualizando}
+              onRefresh={perfil.recarregar}
               tintColor={PetFlowColors.primary}
               colors={[PetFlowColors.primary]}
             />
           }>
           <View style={[styles.cabecalho, shadow(1)]}>
             <Pressable
-              onPress={() => setEscolhendoAvatar((v) => !v)}
+              onPress={perfil.alternarEscolhaAvatar}
               style={({ pressed }) => [styles.avatar, pressed && styles.pressionado]}
               accessibilityLabel="Trocar avatar">
-              <Text style={styles.avatarEmoji}>{avatar}</Text>
+              <Text style={styles.avatarEmoji}>{perfil.avatar}</Text>
               <View style={styles.avatarLapis}>
                 <Feather name="edit-2" size={11} color="#fff" />
               </View>
             </Pressable>
 
-            <Text style={styles.nome}>{tutor.data?.nome}</Text>
-            <Text style={styles.email}>{tutor.data?.email}</Text>
+            <Text style={styles.nome}>{tutor?.nome}</Text>
+            <Text style={styles.email}>{tutor?.email}</Text>
 
-            {escolhendoAvatar ? (
+            {perfil.escolhendoAvatar ? (
               <View style={styles.avatares}>
                 {AVATARES.map((emoji) => (
                   <Pressable
                     key={emoji}
-                    onPress={() => escolherAvatar(emoji)}
-                    style={[styles.avatarOpcao, emoji === avatar && styles.avatarOpcaoAtiva]}>
+                    onPress={() => perfil.escolherAvatar(emoji)}
+                    style={[
+                      styles.avatarOpcao,
+                      emoji === perfil.avatar && styles.avatarOpcaoAtiva,
+                    ]}>
                     <Text style={styles.avatarOpcaoEmoji}>{emoji}</Text>
                   </Pressable>
                 ))}
@@ -106,25 +79,17 @@ export default function ProfileScreen() {
             ) : null}
 
             <View style={styles.numeros}>
-              <Numero valor={pets.data?.length ?? 0} rotulo="pets" />
+              <Numero valor={perfil.totalPets} rotulo="pets" />
               <View style={styles.divisor} />
-              <Numero
-                valor={
-                  agenda.data?.filter((a) => a.status !== 'CANCELADO').length ?? 0
-                }
-                rotulo="consultas"
-              />
+              <Numero valor={perfil.totalConsultas} rotulo="consultas" />
             </View>
           </View>
 
           <Bloco titulo="Seus dados">
-            <Linha rotulo="Telefone" valor={tutor.data?.telefone || 'Não informado'} />
-            <Linha
-              rotulo="Emergência"
-              valor={tutor.data?.telefoneEmergencia || 'Não informado'}
-            />
-            <Linha rotulo="Canal preferido" valor={tutor.data?.canalPreferencial ?? '—'} />
-            <Linha rotulo="Cliente desde" valor={formatarData(tutor.data?.dtCadastro)} ultima />
+            <Linha rotulo="Telefone" valor={tutor?.telefone || 'Não informado'} />
+            <Linha rotulo="Emergência" valor={tutor?.telefoneEmergencia || 'Não informado'} />
+            <Linha rotulo="Canal preferido" valor={tutor?.canalPreferencial ?? '—'} />
+            <Linha rotulo="Cliente desde" valor={formatarData(tutor?.dtCadastro)} ultima />
           </Bloco>
 
           <View style={styles.aviso}>
