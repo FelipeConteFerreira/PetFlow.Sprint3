@@ -41,14 +41,16 @@ não `403`, de propósito: quem não é dono não precisa saber a diferença ent
 A arquitetura é sempre a mesma, sem atalho:
 
 ```
-tela  →  hook (TanStack Query)  →  service  →  cliente HTTP  →  API
+tela  →  hook de tela / formulário  →  hook (TanStack Query)  →  service  →  Axios  →  API
 ```
 
-Nenhuma tela chama `fetch`. Nenhuma tela guarda lista do servidor em `useState`.
+Nenhuma tela chama HTTP, valida formulário ou dispara `mutate` — isso é dos hooks.
+Nenhuma tela guarda lista do servidor em `useState`.
 Depois de uma escrita, quem atualiza a lista é a **invalidação de cache** da
 mutation — não um `useFocusEffect` recarregando na mão.
 
-O cliente HTTP (`lib/api/http.ts`) cuida do `Bearer` token, renova o acesso uma
+O cliente HTTP (`lib/api/http.ts`) é uma instância única do **Axios**. Os
+interceptors cuidam do `Bearer` token, renova o acesso uma
 vez quando a API responde `401` e derruba para o login quando a renovação também
 falha.
 
@@ -108,17 +110,17 @@ falha.
 
 ## 📱 Telas
 
-| # | Tela | Rota | O que faz |
+| # | Tela | Rota (React Navigation) | O que faz |
 |---|---|---|---|
-| 1 | Login | `/login` | Entra com e-mail e senha |
-| 2 | Cadastro do tutor | `/cadastro-tutor` | Cria a conta e escolhe a clínica |
-| 3 | Início | `/(tabs)` | Saudação, números, próxima consulta e atalhos |
-| 4 | Meus pets | `/(tabs)/pets` | Lista os pets, com puxar para atualizar |
-| 5 | Detalhe do pet | `/pet/[id]` | Ficha, vacinas, consultas, editar e remover |
-| 6 | Cadastrar / editar pet | `/cadastrar-pet` | Um formulário para criar e para editar |
-| 7 | Agenda | `/(tabs)/agendamentos` | Próximas e histórico, com cancelar |
-| 8 | Marcar / remarcar consulta | `/agendar` | Escolhe pet, veterinário, data e hora |
-| 9 | Perfil | `/(tabs)/profile` | Dados do tutor, avatar e sair da conta |
+| 1 | Login | `Login` | Entra com e-mail e senha |
+| 2 | Cadastro do tutor | `CadastroTutor` | Cria a conta e escolhe a clínica |
+| 3 | Início | `Tabs › Inicio` | Saudação, números, próxima consulta e atalhos |
+| 4 | Meus pets | `Tabs › Pets` | Lista os pets, com puxar para atualizar |
+| 5 | Detalhe do pet | `PetDetalhe` | Ficha, vacinas, consultas, editar e remover |
+| 6 | Cadastrar / editar pet | `PetForm` | Um formulário para criar e para editar |
+| 7 | Agenda | `Tabs › Agenda` | Próximas e histórico, com cancelar |
+| 8 | Marcar / remarcar consulta | `AgendamentoForm` | Escolhe pet, veterinário, data e hora |
+| 9 | Perfil | `Tabs › Perfil` | Dados do tutor, avatar e sair da conta |
 
 Todas as telas que carregam dados mostram os **três estados**: carregando, erro
 com botão de tentar de novo, e vazio com um texto que explica o vazio.
@@ -131,7 +133,8 @@ com botão de tentar de novo, e vazio com um texto que explica o vazio.
 |---|---|
 | React Native 0.86 | Framework mobile |
 | Expo SDK 57 | Plataforma e ferramentas |
-| Expo Router | Navegação por arquivos (Stack + Tabs) e proteção de rotas |
+| React Navigation 7 | Navegação (Native Stack + Bottom Tabs) e proteção de rotas |
+| Axios | Cliente HTTP, com interceptors de token e de renovação de sessão |
 | TanStack Query 5 | Cache de servidor, estados de carregamento e invalidação |
 | TypeScript | Tipagem dos contratos da API |
 | AsyncStorage | Sessão persistida e preferência local de avatar |
@@ -251,13 +254,17 @@ aplicativo rodando em emulador ou aparelho.
 ## 📁 Organização do código
 
 ```
-app/                  rotas (Expo Router)
-  (tabs)/             Início, Meus pets, Agenda, Perfil
-  pet/[id].tsx        detalhe do pet
+App.tsx               provedores: Query, sessão e navegação
+index.ts              ponto de entrada (registerRootComponent)
+navigation/           Stack, Tabs, tipos das rotas e verbos de navegação
+screens/              só interface: uma tela por arquivo
+hooks/screens/        estado e ações de cada tela
+hooks/forms/          estado, validação e envio dos formulários
+hooks/                use-pets, use-agendamentos, use-catalogo, use-tutor (TanStack Query)
 components/ui/        estados de tela, formulário, cabeçalho
-contexts/             sessão e proteção de rotas
-hooks/                use-pets, use-agendamentos, use-catalogo, use-tutor
-services/             uma função por endpoint da API
-lib/api/              cliente HTTP, erros, sessão persistida
+contexts/             sessão (login, logout, restauração)
+services/             uma função por endpoint da API (Axios)
+lib/api/              cliente Axios, erros, sessão persistida
+lib/forms/            regras de validação e montagem dos payloads
 types/api.ts          contratos conferidos contra o OpenAPI da API
 ```
