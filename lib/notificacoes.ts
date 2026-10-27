@@ -164,12 +164,29 @@ function avisoDeMudanca(
 
 // ---------- casos de uso ----------
 
-/** Depois de um POST/PUT de agendamento bem-sucedido. */
+/**
+ * Registra o status que o próprio tutor acabou de gravar (POST/PUT/DELETE).
+ *
+ * É só AsyncStorage — rápido — e é a única parte que a mutation espera antes
+ * de invalidar o cache: a sincronização seguinte já conhece a mudança e não a
+ * confunde com uma ação da clínica.
+ */
+export async function registrarMudancaDoTutor(
+  id: number,
+  status: AgendamentoStatus
+): Promise<void> {
+  await registrarStatus(id, status);
+}
+
+/**
+ * Depois de um POST/PUT de agendamento bem-sucedido: aviso na hora e
+ * lembretes. Roda em segundo plano — nunca segura a tela do formulário,
+ * mesmo que o sistema demore a responder ao pedido de permissão.
+ */
 export async function notificarConsultaMarcada(
   ag: AgendamentoResponse,
   remarcacao: boolean
 ): Promise<void> {
-  await registrarStatus(ag.id, statusOuPadrao(ag.status));
   if ((await pedirPermissao()) !== 'concedida') return;
 
   const lembretes = lembretesDaConsulta(ag);
@@ -188,9 +205,8 @@ export async function notificarConsultaMarcada(
   });
 }
 
-/** Depois do DELETE (cancelamento feito pelo tutor). */
-export async function notificarConsultaCancelada(id: number): Promise<void> {
-  await registrarStatus(id, 'CANCELADO');
+/** Depois do DELETE (cancelamento feito pelo tutor): some com os lembretes. */
+export async function cancelarLembretesDaConsulta(id: number): Promise<void> {
   await cancelar(idsDaConsulta(id));
 }
 
