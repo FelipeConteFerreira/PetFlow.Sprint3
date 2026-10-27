@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextInputInstance,
   type TextInputProps,
   View,
 } from 'react-native';
@@ -50,7 +51,7 @@ export function Field({
   );
 }
 
-export const Input = forwardRef<TextInput, TextInputProps & { invalid?: boolean }>(
+export const Input = forwardRef<TextInputInstance, TextInputProps & { invalid?: boolean }>(
   function Input({ invalid, style, ...props }, ref) {
     const { cores } = useTema();
     const styles = useEstilos(criarEstilos);

@@ -222,8 +222,8 @@ com botão de tentar de novo, e vazio com um texto que explica o vazio.
 
 | Tecnologia | Uso |
 |---|---|
-| React Native 0.86 | Framework mobile |
-| Expo SDK 57 | Plataforma e ferramentas |
+| React Native 0.88 | Framework mobile |
+| Expo SDK 58 | Plataforma e ferramentas |
 | React Navigation 7 | Navegação (Native Stack + Bottom Tabs) e proteção de rotas |
 | Axios | Cliente HTTP, com interceptors de token e de renovação de sessão |
 | TanStack Query 5 | Cache de servidor, estados de carregamento e invalidação |

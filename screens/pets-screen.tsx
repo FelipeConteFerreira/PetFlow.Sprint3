@@ -61,7 +61,7 @@ export function PetsScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isFetching}
-              onRefresh={refetch}
+              onRefresh={() => void refetch()}
               tintColor={cores.primary}
               colors={[cores.primary]}
             />
