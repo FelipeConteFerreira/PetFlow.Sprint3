@@ -6,7 +6,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/contexts/auth-context';
 import { TemaProvider, useTema } from '@/contexts/theme-context';
+import { useAberturaPorNotificacao } from '@/hooks/use-notificacoes';
 import { queryClient } from '@/lib/query-client';
+import { navigationRef } from '@/navigation/navigation-ref';
 import { RootNavigator } from '@/navigation/root-navigator';
 
 /**
@@ -29,9 +31,13 @@ export default function App() {
   );
 }
 
-/** Contêiner de navegação com as cores do tema ativo. */
+/**
+ * Contêiner de navegação com as cores do tema ativo. A referência permite que
+ * o toque numa notificação leve o usuário direto à tela certa.
+ */
 function Navegacao() {
   const { cores, esquema } = useTema();
+  const { onNavegacaoPronta } = useAberturaPorNotificacao();
 
   const temaNavegacao = useMemo<Theme>(() => {
     const base = esquema === 'escuro' ? DarkTheme : DefaultTheme;
@@ -50,7 +56,7 @@ function Navegacao() {
   }, [cores, esquema]);
 
   return (
-    <NavigationContainer theme={temaNavegacao}>
+    <NavigationContainer ref={navigationRef} theme={temaNavegacao} onReady={onNavegacaoPronta}>
       <RootNavigator />
       <StatusBar style={esquema === 'escuro' ? 'light' : 'dark'} />
     </NavigationContainer>

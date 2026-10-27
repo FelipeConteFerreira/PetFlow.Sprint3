@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform } from 'react-native';
 
 import { useTema } from '@/contexts/theme-context';
+import { useSincronizacaoDeNotificacoes } from '@/hooks/use-notificacoes';
 import { AgendaScreen } from '@/screens/agenda-screen';
 import { HomeScreen } from '@/screens/home-screen';
 import { PetsScreen } from '@/screens/pets-screen';
@@ -12,9 +13,15 @@ import type { TabParamList } from './types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
-/** As quatro abas do aplicativo do tutor. */
+/**
+ * As quatro abas do aplicativo do tutor.
+ *
+ * Também é aqui que a sincronização de notificações fica montada: as abas
+ * existem durante toda a sessão logada, e só durante ela.
+ */
 export function MainTabs() {
   const { cores } = useTema();
+  useSincronizacaoDeNotificacoes();
   return (
     <Tab.Navigator
       screenOptions={{

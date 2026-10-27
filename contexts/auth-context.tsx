@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { clearAuthSession, getAuthSession, saveAuthSession } from '@/lib/api/auth-storage';
 import { setUnauthorizedHandler } from '@/lib/api/http';
+import { limparNotificacoes } from '@/lib/notificacoes';
 import { queryClient } from '@/lib/query-client';
 import { login as loginRequest, logout as logoutRequest } from '@/services/auth';
 import { registerTutor } from '@/services/tutores';
@@ -63,6 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     await clearAuthSession();
     queryClient.clear();
+    await limparNotificacoes().catch(() => undefined);
     if (refreshToken) await logoutRequest(refreshToken);
   }, [session?.refreshToken]);
 

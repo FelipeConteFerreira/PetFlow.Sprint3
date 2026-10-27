@@ -4,6 +4,7 @@ import { PREFERENCIA_TEMA_LABEL, type PreferenciaDeTema } from '@/constants/them
 import { useAuth } from '@/contexts/auth-context';
 import { useTema } from '@/contexts/theme-context';
 import { useAgendamentos } from '@/hooks/use-agendamentos';
+import { usePermissaoDeNotificacao } from '@/hooks/use-notificacoes';
 import { usePets } from '@/hooks/use-pets';
 import { useTutorMe } from '@/hooks/use-tutor';
 import { AVATARES, getAvatar, setAvatar } from '@/lib/preferences';
@@ -18,6 +19,7 @@ export function usePerfil() {
   const tutor = useTutorMe();
   const pets = usePets();
   const agenda = useAgendamentos();
+  const notificacoes = usePermissaoDeNotificacao();
 
   const [avatar, setAvatarAtual] = useState(AVATARES[0]);
   const [escolhendoAvatar, setEscolhendoAvatar] = useState(false);
@@ -51,6 +53,9 @@ export function usePerfil() {
       rotulo: PREFERENCIA_TEMA_LABEL[valor],
     })),
     escolherTema: escolherPreferencia,
+    /** Lembretes de consulta e vacina dependem desta permissão do sistema. */
+    notificacoesAtivas: notificacoes.permissao === 'concedida',
+    ativarNotificacoes: notificacoes.ativar,
     /** O navegador troca para o login sozinho quando a sessão some. */
     sair: () => void signOut(),
   };

@@ -119,6 +119,34 @@ export function ProfileScreen() {
             </View>
           </Bloco>
 
+          <Bloco titulo="Notificações">
+            <View style={styles.notificacoes}>
+              <View style={[styles.acaoIcone, styles.notificacoesIcone]}>
+                <Feather
+                  name={perfil.notificacoesAtivas ? 'bell' : 'bell-off'}
+                  size={17}
+                  color={perfil.notificacoesAtivas ? cores.primaryDark : cores.textMuted}
+                />
+              </View>
+              <View style={styles.notificacoesTexto}>
+                <Text style={styles.notificacoesTitulo}>
+                  {perfil.notificacoesAtivas ? 'Ativadas' : 'Desativadas'}
+                </Text>
+                <Text style={styles.notificacoesDica}>
+                  Confirmação da clínica, lembrete 24 h e 2 h antes da consulta e reforço de
+                  vacinas.
+                </Text>
+              </View>
+              {perfil.notificacoesAtivas ? null : (
+                <Pressable
+                  onPress={perfil.ativarNotificacoes}
+                  style={({ pressed }) => [styles.notificacoesBotao, pressed && styles.pressionado]}>
+                  <Text style={styles.notificacoesBotaoTexto}>Ativar</Text>
+                </Pressable>
+              )}
+            </View>
+          </Bloco>
+
           <Bloco titulo="Conta">
             <Pressable
               style={({ pressed }) => [styles.acao, pressed && styles.pressionado]}
@@ -283,6 +311,23 @@ function criarEstilos(cores: Paleta) {
       padding: Spacing.lg,
     },
     avisoTexto: { flex: 1, fontSize: 13, lineHeight: 19, color: cores.blueDark },
+    notificacoes: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingVertical: Spacing.lg,
+    },
+    notificacoesIcone: { backgroundColor: cores.primarySoft },
+    notificacoesTexto: { flex: 1, gap: 2 },
+    notificacoesTitulo: { fontSize: 15, fontWeight: '600', color: cores.text },
+    notificacoesDica: { fontSize: 12, lineHeight: 17, color: cores.textSecondary },
+    notificacoesBotao: {
+      backgroundColor: cores.primary,
+      borderRadius: Radius.pill,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.sm,
+    },
+    notificacoesBotaoTexto: { color: cores.onPrimary, fontWeight: '700', fontSize: 13 },
     aparencia: { paddingVertical: Spacing.lg, gap: Spacing.sm },
     aparenciaDica: { fontSize: 12, color: cores.textMuted },
     acao: {

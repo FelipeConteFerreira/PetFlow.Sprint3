@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { notificarConsultaCancelada, notificarConsultaMarcada } from '@/lib/notificacoes';
 import { queryKeys } from '@/lib/query-client';
 import {
   cancelarAgendamento,
@@ -15,7 +16,14 @@ import type { AgendamentoRequest } from '@/types/api';
  *
  * `useAgendamentos` não recebe mais a lista de pets para filtrar no cliente:
  * a API devolve só a agenda dos pets do tutor autenticado.
+ *
+ * As escritas avisam o módulo de notificações *antes* de invalidar o cache:
+ * assim a sincronização que vem com o refetch já conhece a mudança feita pelo
+ * tutor e não a confunde com uma ação da clínica. Falha de notificação nunca
+ * derruba a escrita — a consulta foi marcada do mesmo jeito.
  */
+
+const semFalhar = (tarefa: Promise<void>) => tarefa.catch(() => undefined);
 
 export function useAgendamentos() {
   return useQuery({
@@ -36,7 +44,10 @@ export function useCreateAgendamento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AgendamentoRequest) => createAgendamento(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.agendamentos }),
+    onSuccess: async (agendamento) => {
+      await semFalhar(notificarConsultaMarcada(agendamento, false));
+      await qc.invalidateQueries({ queryKey: queryKeys.agendamentos });
+    },
   });
 }
 
@@ -45,9 +56,12 @@ export function useUpdateAgendamento(id: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: AgendamentoRequest) => updateAgendamento(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: queryKeys.agendamentos });
-      qc.invalidateQueries({ queryKey: queryKeys.agendamento(id) });
+    onSuccess: async (agendamento) => {
+      await semFalhar(notificarConsultaMarcada(agendamento, true));
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: queryKeys.agendamentos }),
+        qc.invalidateQueries({ queryKey: queryKeys.agendamento(id) }),
+      ]);
     },
   });
 }
@@ -60,6 +74,9 @@ export function useCancelarAgendamento() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: number) => cancelarAgendamento(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.agendamentos }),
+    onSuccess: async (_, id) => {
+      await semFalhar(notificarConsultaCancelada(id));
+      await qc.invalidateQueries({ queryKey: queryKeys.agendamentos });
+    },
   });
 }
