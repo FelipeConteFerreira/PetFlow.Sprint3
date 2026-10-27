@@ -8,6 +8,7 @@ import { CadastroTutorScreen } from '@/screens/cadastro-tutor-screen';
 import { LoginScreen } from '@/screens/login-screen';
 import { PetDetalheScreen } from '@/screens/pet-detalhe-screen';
 import { PetFormScreen } from '@/screens/pet-form-screen';
+import { SobreAppScreen } from '@/screens/sobre-app-screen';
 
 import { MainTabs } from './main-tabs';
 import type { RootStackParamList } from './types';
@@ -52,6 +53,8 @@ export function RootNavigator() {
           <Stack.Screen name="CadastroTutor" component={CadastroTutorScreen} />
         </>
       )}
+      {/* Fora dos dois grupos: a versão instalada pode ser conferida antes do login. */}
+      <Stack.Screen name="SobreApp" component={SobreAppScreen} />
     </Stack.Navigator>
   );
 }

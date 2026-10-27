@@ -9,6 +9,7 @@ import type { Paleta } from '@/constants/theme';
 import { useTema } from '@/contexts/theme-context';
 import { useEstilos } from '@/hooks/use-estilos';
 import { usePerfil } from '@/hooks/screens/use-perfil';
+import { useAppNavigation } from '@/navigation/use-app-navigation';
 import { formatarData } from '@/lib/formatters';
 import { AVATARES } from '@/lib/preferences';
 
@@ -23,6 +24,7 @@ export function ProfileScreen() {
   const { cores } = useTema();
   const styles = useEstilos(criarEstilos);
   const perfil = usePerfil();
+  const navigation = useAppNavigation();
   const { tutor } = perfil;
 
   function confirmarSaida() {
@@ -148,6 +150,15 @@ export function ProfileScreen() {
           </Bloco>
 
           <Bloco titulo="Conta">
+            <Pressable
+              style={({ pressed }) => [styles.acao, styles.linhaBorda, pressed && styles.pressionado]}
+              onPress={navigation.abrirSobre}>
+              <View style={[styles.acaoIcone, styles.notificacoesIcone]}>
+                <Feather name="info" size={17} color={cores.primaryDark} />
+              </View>
+              <Text style={[styles.acaoTexto, styles.acaoTextoNeutro]}>Sobre o App</Text>
+              <Feather name="chevron-right" size={18} color={cores.textMuted} />
+            </Pressable>
             <Pressable
               style={({ pressed }) => [styles.acao, pressed && styles.pressionado]}
               onPress={confirmarSaida}>
@@ -344,6 +355,7 @@ function criarEstilos(cores: Paleta) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    acaoTextoNeutro: { flex: 1, color: cores.text },
     acaoTexto: { fontSize: 15, fontWeight: '600', color: cores.danger },
     rodape: {
       textAlign: 'center',

@@ -25,6 +25,8 @@ export type RootStackParamList = {
   PetForm: { petId?: number } | undefined;
   /** Sem `agendamentoId` é consulta nova; com ele é remarcação. */
   AgendamentoForm: { agendamentoId?: number } | undefined;
+  /** Versão e commit do build. Aberta com ou sem sessão. */
+  SobreApp: undefined;
 };
 
 declare global {

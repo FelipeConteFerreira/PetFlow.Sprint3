@@ -31,6 +31,8 @@ export function useAppNavigation() {
       marcarConsulta: () => navigation.navigate('AgendamentoForm'),
       remarcarConsulta: (agendamentoId: number) =>
         navigation.navigate('AgendamentoForm', { agendamentoId }),
+
+      abrirSobre: () => navigation.navigate('SobreApp'),
     }),
     [navigation]
   );

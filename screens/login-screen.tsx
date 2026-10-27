@@ -75,6 +75,10 @@ export function LoginScreen() {
               Cadastre-se
             </Text>
           </View>
+
+          <Text style={styles.sobre} onPress={navigation.abrirSobre}>
+            Sobre o App
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -83,6 +87,13 @@ export function LoginScreen() {
 
 function criarEstilos(cores: Paleta) {
   return StyleSheet.create({
+    sobre: {
+      textAlign: 'center',
+      fontSize: 13,
+      color: cores.textMuted,
+      marginTop: Spacing.lg,
+      textDecorationLine: 'underline',
+    },
     safe: { flex: 1, backgroundColor: cores.background },
     flex: { flex: 1 },
     conteudo: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
