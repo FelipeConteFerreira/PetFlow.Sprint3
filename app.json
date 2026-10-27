@@ -55,6 +55,12 @@
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "owner": "felipeconte",
+    "extra": {
+      "eas": {
+        "projectId": "a1c89e3b-a709-43c6-a97d-bbfa3d74cb8f"
+      }
     }
   }
 }
