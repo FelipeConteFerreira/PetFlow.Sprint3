@@ -4,7 +4,7 @@ Aplicativo mobile do **Clyvo Vet**, feito em React Native com Expo e integrado �
 API Java (Spring Boot) do projeto. É o aplicativo do **tutor**: quem tem um pet
 e quer acompanhar de perto o cuidado dele.
 
-Disciplina de Mobile Application Development — FIAP, Challenge 2026, Sprint 3.
+Disciplina de Mobile Application Development — FIAP, Challenge 2026, **Sprint 4 (entrega final)**.
 
 ---
 
@@ -23,6 +23,19 @@ guardada no aparelho.
 
 Todo dado que aparece na tela vem da API. Não há dado de exemplo embutido no
 código, nem tela que finge ter carregado alguma coisa.
+
+---
+
+## 🆕 O que a Sprint 4 acrescentou
+
+| Requisito | Onde está |
+|---|---|
+| Notificações locais ligadas a eventos reais | [🔔 Notificações](#-notificações) |
+| Tema claro/escuro | [🌗 Tema](#-tema-claro--escuro) |
+| Tela "Sobre o App" com o hash do commit | [ℹ️ Sobre o App e versão publicada](#ℹ️-sobre-o-app-e-versão-publicada) |
+| Publicação no Firebase App Distribution | [📦 Publicação](#-publicação) e [`docs/PUBLICACAO.md`](docs/PUBLICACAO.md) |
+
+Nenhuma tela ou funcionalidade das sprints anteriores foi removida.
 
 ---
 
@@ -108,6 +121,83 @@ falha.
 
 ---
 
+## 🔔 Notificações
+
+Notificações **locais** (`expo-notifications`), cada uma disparada por um evento
+real do sistema e levando o tutor à tela onde ele age sobre o aviso.
+
+| Cenário | Evento que dispara | O que o tutor vê | Toque leva a |
+|---|---|---|---|
+| Consulta solicitada / remarcada | Tutor salva o formulário (`POST`/`PUT` com sucesso) | Aviso na hora com data, hora e veterinário | Agenda |
+| Lembrete de consulta | 24 h e 2 h antes do horário (agendados no aparelho ao marcar) | "Consulta do Bidu amanhã às 14:00" | A consulta, para remarcar |
+| Confirmação pela clínica | A agenda vinda da API mostra `SOLICITADO → CONFIRMADO` | "Consulta do Bidu confirmada ✅" | Agenda |
+| Cancelamento pela clínica | A agenda vinda da API mostra `→ CANCELADO` sem o tutor ter cancelado | Aviso com o motivo | Agenda, para marcar outro horário |
+| Reforço de vacina | `proximoReforco` da carteira de vacinação | 7 dias antes e no dia, às 9h | Detalhe do pet |
+
+Como cada peça se encaixa:
+
+- **Cancelar** uma consulta cancela os lembretes dela; **remarcar** os substitui.
+- A agenda é conferida com a API ao abrir o app, ao voltar do segundo plano e
+  a cada minuto com o app aberto. O status de cada consulta fica guardado no
+  aparelho; o que mudou **do lado da clínica** vira notificação. Mudanças
+  feitas pelo próprio tutor são registradas antes, para não gerar aviso falso.
+- O toque funciona com o app aberto, em segundo plano ou fechado. Se a sessão
+  tiver expirado, a tela é aberta logo depois do login.
+- O **logout** cancela todos os lembretes: o próximo tutor do aparelho não
+  recebe aviso do anterior.
+- A aba **Perfil** mostra se as notificações estão ativas e oferece ativá-las.
+
+Para demonstrar a confirmação pela clínica: marque uma consulta no app, mude o
+status dela para `CONFIRMADO` pela API de gestão (Swagger/Postman com um token
+de colaborador) e volte ao app — o aviso chega em até um minuto, ou na hora ao
+puxar a Agenda para atualizar.
+
+Código: `services/notificacoes.ts` (acesso ao sistema), `lib/notificacoes.ts`
+(regras: quando e o que avisar), `hooks/use-notificacoes.ts` (ciclo de vida e
+toque), `navigation/navigation-ref.ts` (abrir a tela de destino).
+
+---
+
+## 🌗 Tema claro / escuro
+
+O app acompanha o modo do celular. No **Perfil → Aparência** dá para fixar
+**Claro** ou **Escuro** (a escolha fica salva no aparelho).
+
+Nenhuma tela tem cor fixa: as paletas ficam em `constants/theme.ts`, o
+`TemaProvider` escolhe a ativa e cada tela monta o próprio `StyleSheet` a
+partir dela com `useEstilos(criarEstilos)`. Navegação, barra de abas e barra de
+status mudam junto.
+
+---
+
+## ℹ️ Sobre o App e versão publicada
+
+A tela **Sobre o App** (pelo Perfil, ou pelo link no Login, sem precisar de
+conta) mostra a versão e o **hash do commit** que gerou o build instalado.
+
+O hash não é digitado à mão: `app.config.js` o lê do git (ou da variável
+`EAS_BUILD_GIT_COMMIT_HASH`, no EAS Build) na hora do build e o grava no app.
+Se o build sair de uma árvore com alterações não commitadas, a tela avisa — é
+o sinal de que aquele APK não deve ser publicado.
+
+---
+
+## 📦 Publicação
+
+O APK é gerado com o **EAS Build** (perfil `preview` do `eas.json`) e
+distribuído pelo **Firebase App Distribution**, com o e-mail institucional do
+professor cadastrado como tester.
+
+| Item | Valor |
+|---|---|
+| Pacote Android | `br.com.clyvovet.petflow` |
+| Gerar o APK | `npm run build:apk` |
+| Commit publicado | `PREENCHER` (o mesmo da tela Sobre o App) |
+
+Passo a passo completo, com checklist de conferência: [`docs/PUBLICACAO.md`](docs/PUBLICACAO.md).
+
+---
+
 ## 📱 Telas
 
 | # | Tela | Rota (React Navigation) | O que faz |
@@ -120,7 +210,8 @@ falha.
 | 6 | Cadastrar / editar pet | `PetForm` | Um formulário para criar e para editar |
 | 7 | Agenda | `Tabs › Agenda` | Próximas e histórico, com cancelar |
 | 8 | Marcar / remarcar consulta | `AgendamentoForm` | Escolhe pet, veterinário, data e hora |
-| 9 | Perfil | `Tabs › Perfil` | Dados do tutor, avatar e sair da conta |
+| 9 | Perfil | `Tabs › Perfil` | Dados do tutor, avatar, aparência, notificações e sair |
+| 10 | Sobre o App | `SobreApp` | Versão, hash do commit do build, equipe |
 
 Todas as telas que carregam dados mostram os **três estados**: carregando, erro
 com botão de tentar de novo, e vazio com um texto que explica o vazio.
@@ -137,7 +228,10 @@ com botão de tentar de novo, e vazio com um texto que explica o vazio.
 | Axios | Cliente HTTP, com interceptors de token e de renovação de sessão |
 | TanStack Query 5 | Cache de servidor, estados de carregamento e invalidação |
 | TypeScript | Tipagem dos contratos da API |
-| AsyncStorage | Sessão persistida e preferência local de avatar |
+| AsyncStorage | Sessão persistida, avatar, tema e último status conhecido da agenda |
+| expo-notifications | Notificações locais: avisos, lembretes agendados e toque com destino |
+| expo-constants | Versão e hash do commit embutidos no build |
+| EAS Build + Firebase App Distribution | Geração e distribuição do APK |
 | expo-haptics | Retorno tátil nos seletores e botões |
 | @expo/vector-icons | Ícones (Ionicons, MaterialCommunityIcons) |
 
@@ -243,28 +337,38 @@ estados vazios do aplicativo.
 
 ## 🎬 Vídeo de demonstração
 
-** https://youtu.be/9Q5g4WaXCoA?feature=shared **
+**Sprint 4 (entrega final):** `PREENCHER COM O LINK`
 
-O vídeo tem no máximo 5 minutos, é narrado e mostra: navegação entre as telas,
-autenticação (login e logout), a integração com a API acontecendo, e o
-aplicativo rodando em emulador ou aparelho.
+Gravado com o APK publicado no Firebase, em aparelho, num fluxo contínuo:
+login → pets (cadastrar, editar, ver vacinas) → marcar consulta (notificação
+na hora) → confirmação pela clínica (notificação e toque abrindo a Agenda) →
+remarcar e cancelar → tema escuro → Sobre o App com o hash → logout.
+
+Sprint 3: https://youtu.be/9Q5g4WaXCoA?feature=shared
 
 ---
 
 ## 📁 Organização do código
 
 ```
-App.tsx               provedores: Query, sessão e navegação
+App.tsx               provedores: tema, Query, sessão e navegação
+app.config.js         grava o hash do commit no build
+eas.json              perfis do EAS Build (APK de distribuição)
 index.ts              ponto de entrada (registerRootComponent)
-navigation/           Stack, Tabs, tipos das rotas e verbos de navegação
+navigation/           Stack, Tabs, tipos das rotas, verbos e ref de navegação
 screens/              só interface: uma tela por arquivo
 hooks/screens/        estado e ações de cada tela
 hooks/forms/          estado, validação e envio dos formulários
-hooks/                use-pets, use-agendamentos, use-catalogo, use-tutor (TanStack Query)
+hooks/                use-pets, use-agendamentos, use-catalogo, use-tutor (TanStack Query),
+                      use-notificacoes, use-estilos
 components/ui/        estados de tela, formulário, cabeçalho
-contexts/             sessão (login, logout, restauração)
-services/             uma função por endpoint da API (Axios)
+contexts/             sessão (login, logout, restauração) e tema
+services/             uma função por endpoint da API (Axios) e o acesso às notificações
 lib/api/              cliente Axios, erros, sessão persistida
 lib/forms/            regras de validação e montagem dos payloads
+lib/notificacoes.ts   regras de notificação (quando e o que avisar)
+lib/app-info.ts       versão e commit do build
+constants/theme.ts    paletas clara e escura
+docs/PUBLICACAO.md    passo a passo do Firebase App Distribution
 types/api.ts          contratos conferidos contra o OpenAPI da API
 ```
