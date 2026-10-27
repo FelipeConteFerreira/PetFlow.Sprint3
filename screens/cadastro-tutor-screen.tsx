@@ -4,12 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ChipSelect, Field, FormError, Input, PrimaryButton } from '@/components/ui/form';
 import { ScreenHeader } from '@/components/ui/screen-header';
-import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
+import { Radius, Spacing } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { useCadastroTutorForm } from '@/hooks/forms/use-cadastro-tutor-form';
 import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /** Só desenho: campos, escolha da clínica, validação e envio moram no hook. */
 export function CadastroTutorScreen() {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const {
     values,
@@ -36,7 +41,7 @@ export function CadastroTutorScreen() {
           showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
             <View style={styles.heroIcone}>
-              <MaterialCommunityIcons name="paw" size={30} color={PetFlowColors.primary} />
+              <MaterialCommunityIcons name="paw" size={30} color={cores.primary} />
             </View>
             <Text style={styles.heroTitulo}>Bem-vindo ao PetFlow</Text>
             <Text style={styles.heroTexto}>
@@ -151,49 +156,51 @@ export function CadastroTutorScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  flex: { flex: 1 },
-  conteudo: { padding: Spacing.xl, paddingBottom: 40 },
-  hero: { alignItems: 'center', marginBottom: Spacing.xxl },
-  heroIcone: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: PetFlowColors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroTitulo: {
-    fontSize: 21,
-    fontWeight: '800',
-    color: PetFlowColors.text,
-    marginTop: Spacing.md,
-  },
-  heroTexto: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: PetFlowColors.textSecondary,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  aviso: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: PetFlowColors.textSecondary,
-    backgroundColor: PetFlowColors.infoBg,
-    borderRadius: Radius.sm,
-    padding: Spacing.md,
-  },
-  avisoErro: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: PetFlowColors.danger,
-    backgroundColor: PetFlowColors.dangerSoft,
-    borderRadius: Radius.sm,
-    padding: Spacing.md,
-  },
-  rodape: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
-  rodapeTexto: { color: PetFlowColors.textSecondary, fontSize: 14 },
-  rodapeLink: { color: PetFlowColors.primary, fontSize: 14, fontWeight: '700' },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    flex: { flex: 1 },
+    conteudo: { padding: Spacing.xl, paddingBottom: 40 },
+    hero: { alignItems: 'center', marginBottom: Spacing.xxl },
+    heroIcone: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: cores.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroTitulo: {
+      fontSize: 21,
+      fontWeight: '800',
+      color: cores.text,
+      marginTop: Spacing.md,
+    },
+    heroTexto: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: cores.textSecondary,
+      textAlign: 'center',
+      marginTop: Spacing.sm,
+    },
+    aviso: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: cores.textSecondary,
+      backgroundColor: cores.infoBg,
+      borderRadius: Radius.sm,
+      padding: Spacing.md,
+    },
+    avisoErro: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: cores.danger,
+      backgroundColor: cores.dangerSoft,
+      borderRadius: Radius.sm,
+      padding: Spacing.md,
+    },
+    rodape: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
+    rodapeTexto: { color: cores.textSecondary, fontSize: 14 },
+    rodapeLink: { color: cores.primary, fontSize: 14, fontWeight: '700' },
+  });
+}

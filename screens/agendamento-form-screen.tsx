@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChipSelect, Field, FormError, Input, PrimaryButton } from '@/components/ui/form';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { AsyncBoundary, EmptyState } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
+import { Radius, Spacing } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useEstilos } from '@/hooks/use-estilos';
 import { useAgendamentoForm, useAgendamentoFormData } from '@/hooks/forms/use-agendamento-form';
 import { hojeISO } from '@/lib/formatters';
 import type { RootStackParamList } from '@/navigation/types';
@@ -20,6 +22,7 @@ import type { AgendamentoResponse, PetResponse, VeterinarioResponse } from '@/ty
  * dentro desenha — estado, validação e envio são do `useAgendamentoForm`.
  */
 export function AgendamentoFormScreen() {
+  const styles = useEstilos(criarEstilos);
   const { params } = useRoute<RouteProp<RootStackParamList, 'AgendamentoForm'>>();
   const dados = useAgendamentoFormData(params?.agendamentoId);
 
@@ -59,6 +62,7 @@ function FormularioAgendamento({
   pets: PetResponse[];
   veterinarios: VeterinarioResponse[];
 }) {
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const form = useAgendamentoForm({ agendamento, pets, onSaved: navigation.voltar });
   const { values, setValue, errors, isSubmitting } = form;
@@ -158,15 +162,17 @@ function FormularioAgendamento({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  flex: { flex: 1 },
-  conteudo: { padding: Spacing.xl, paddingBottom: 40 },
-  nota: {
-    backgroundColor: PetFlowColors.blueSoft,
-    borderRadius: Radius.md,
-    padding: Spacing.lg,
-    marginBottom: Spacing.lg,
-  },
-  notaTexto: { fontSize: 13, lineHeight: 19, color: PetFlowColors.blueDark },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    flex: { flex: 1 },
+    conteudo: { padding: Spacing.xl, paddingBottom: 40 },
+    nota: {
+      backgroundColor: cores.blueSoft,
+      borderRadius: Radius.md,
+      padding: Spacing.lg,
+      marginBottom: Spacing.lg,
+    },
+    notaTexto: { fontSize: 13, lineHeight: 19, color: cores.blueDark },
+  });
+}

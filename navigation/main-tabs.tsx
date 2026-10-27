@@ -2,7 +2,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform } from 'react-native';
 
-import { PetFlowColors } from '@/constants/petflow';
+import { useTema } from '@/contexts/theme-context';
 import { AgendaScreen } from '@/screens/agenda-screen';
 import { HomeScreen } from '@/screens/home-screen';
 import { PetsScreen } from '@/screens/pets-screen';
@@ -14,15 +14,16 @@ const Tab = createBottomTabNavigator<TabParamList>();
 
 /** As quatro abas do aplicativo do tutor. */
 export function MainTabs() {
+  const { cores } = useTema();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: PetFlowColors.primary,
-        tabBarInactiveTintColor: PetFlowColors.textMuted,
+        tabBarActiveTintColor: cores.primary,
+        tabBarInactiveTintColor: cores.textMuted,
         tabBarStyle: {
-          backgroundColor: PetFlowColors.card,
-          borderTopColor: PetFlowColors.border,
+          backgroundColor: cores.card,
+          borderTopColor: cores.border,
           paddingTop: 4,
           height: Platform.OS === 'ios' ? 88 : 64,
         },

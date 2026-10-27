@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChipSelect, Field, FormError, Input, PrimaryButton } from '@/components/ui/form';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { AsyncBoundary } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
+import { Radius, Spacing } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useEstilos } from '@/hooks/use-estilos';
 import { usePetForm, usePetFormData } from '@/hooks/forms/use-pet-form';
 import { PORTES, SEXOS, STATUS_EDITAVEIS, STATUS_LABEL_CURTO } from '@/lib/forms/pet';
 import { PORTE_LABEL, SEXO_LABEL } from '@/lib/formatters';
@@ -24,6 +26,7 @@ import type { EspecieResponse, PetResponse, RacaResponse } from '@/types/api';
  * guarda estado de formulário ou chama mutation — isso é do `usePetForm`.
  */
 export function PetFormScreen() {
+  const styles = useEstilos(criarEstilos);
   const { params } = useRoute<RouteProp<RootStackParamList, 'PetForm'>>();
   const dados = usePetFormData(params?.petId);
 
@@ -63,6 +66,7 @@ function FormularioPet({
   especies: EspecieResponse[];
   racas: RacaResponse[];
 }) {
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const form = usePetForm({ pet, racas, onSaved: navigation.voltar });
   const { values, setValue, errors, isSubmitting } = form;
@@ -199,16 +203,18 @@ function FormularioPet({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  flex: { flex: 1 },
-  conteudo: { padding: Spacing.xl, paddingBottom: 40 },
-  textarea: { minHeight: 104, textAlignVertical: 'top', paddingTop: Spacing.md },
-  aviso: {
-    fontSize: 13,
-    color: PetFlowColors.textSecondary,
-    backgroundColor: PetFlowColors.infoBg,
-    borderRadius: Radius.sm,
-    padding: Spacing.md,
-  },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    flex: { flex: 1 },
+    conteudo: { padding: Spacing.xl, paddingBottom: 40 },
+    textarea: { minHeight: 104, textAlignVertical: 'top', paddingTop: Spacing.md },
+    aviso: {
+      fontSize: 13,
+      color: cores.textSecondary,
+      backgroundColor: cores.infoBg,
+      borderRadius: Radius.sm,
+      padding: Spacing.md,
+    },
+  });
+}

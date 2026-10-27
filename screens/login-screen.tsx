@@ -3,12 +3,15 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Field, FormError, Input, PrimaryButton } from '@/components/ui/form';
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useEstilos } from '@/hooks/use-estilos';
 import { useLoginForm } from '@/hooks/forms/use-login-form';
 import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /** Só desenho: campos, validação e envio moram em `useLoginForm`. */
 export function LoginScreen() {
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const { values, setValue, errors, submit, isSubmitting, submitError } = useLoginForm();
 
@@ -78,40 +81,42 @@ export function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  flex: { flex: 1 },
-  conteudo: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
-  marcaBloco: { alignItems: 'center', marginBottom: Spacing.xxl },
-  marcaIcone: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: PetFlowColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  marca: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: PetFlowColors.text,
-    marginTop: Spacing.lg,
-    letterSpacing: -0.6,
-  },
-  marcaTexto: {
-    fontSize: 15,
-    color: PetFlowColors.textSecondary,
-    marginTop: Spacing.xs,
-    textAlign: 'center',
-  },
-  cartao: {
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    padding: Spacing.xl,
-  },
-  rodape: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
-  rodapeTexto: { color: PetFlowColors.textSecondary, fontSize: 14 },
-  rodapeLink: { color: PetFlowColors.primary, fontSize: 14, fontWeight: '700' },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    flex: { flex: 1 },
+    conteudo: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
+    marcaBloco: { alignItems: 'center', marginBottom: Spacing.xxl },
+    marcaIcone: {
+      width: 76,
+      height: 76,
+      borderRadius: 38,
+      backgroundColor: cores.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    marca: {
+      fontSize: 30,
+      fontWeight: '800',
+      color: cores.text,
+      marginTop: Spacing.lg,
+      letterSpacing: -0.6,
+    },
+    marcaTexto: {
+      fontSize: 15,
+      color: cores.textSecondary,
+      marginTop: Spacing.xs,
+      textAlign: 'center',
+    },
+    cartao: {
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      padding: Spacing.xl,
+    },
+    rodape: { flexDirection: 'row', justifyContent: 'center', marginTop: Spacing.xl },
+    rodapeTexto: { color: cores.textSecondary, fontSize: 14 },
+    rodapeLink: { color: cores.primary, fontSize: 14, fontWeight: '700' },
+  });
+}

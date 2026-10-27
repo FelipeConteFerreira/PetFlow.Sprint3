@@ -1,8 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
-import { PetFlowColors } from '@/constants/petflow';
 import { useAuth } from '@/contexts/auth-context';
+import { useTema } from '@/contexts/theme-context';
 import { AgendamentoFormScreen } from '@/screens/agendamento-form-screen';
 import { CadastroTutorScreen } from '@/screens/cadastro-tutor-screen';
 import { LoginScreen } from '@/screens/login-screen';
@@ -25,18 +25,20 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
  */
 export function RootNavigator() {
   const { isAuthenticated, isRestoring } = useAuth();
+  const { cores } = useTema();
 
   // Enquanto a sessão salva é lida, não se sabe qual conjunto de telas mostrar.
   if (isRestoring) {
     return (
-      <View style={styles.splash}>
-        <ActivityIndicator size="large" color={PetFlowColors.primary} />
+      <View style={[styles.splash, { backgroundColor: cores.background }]}>
+        <ActivityIndicator size="large" color={cores.primary} />
       </View>
     );
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.background } }}>
       {isAuthenticated ? (
         <>
           <Stack.Screen name="Tabs" component={MainTabs} />
@@ -59,6 +61,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: PetFlowColors.background,
   },
 });

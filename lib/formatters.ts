@@ -1,4 +1,4 @@
-import { PetFlowColors } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
 import type {
   AgendamentoStatus,
   PetPorte,
@@ -52,19 +52,22 @@ export function statusOuPadrao(status?: AgendamentoStatus): AgendamentoStatus {
   return status ?? 'SOLICITADO';
 }
 
-export function corDoStatusAgendamento(status?: AgendamentoStatus): {
+export function corDoStatusAgendamento(
+  status: AgendamentoStatus | undefined,
+  cores: Paleta
+): {
   fundo: string;
   texto: string;
 } {
   switch (statusOuPadrao(status)) {
     case 'CONFIRMADO':
-      return { fundo: PetFlowColors.primarySoft, texto: PetFlowColors.primaryDark };
+      return { fundo: cores.primarySoft, texto: cores.primaryDark };
     case 'REALIZADO':
-      return { fundo: PetFlowColors.blueSoft, texto: PetFlowColors.blueDark };
+      return { fundo: cores.blueSoft, texto: cores.blueDark };
     case 'CANCELADO':
-      return { fundo: PetFlowColors.dangerSoft, texto: PetFlowColors.danger };
+      return { fundo: cores.dangerSoft, texto: cores.danger };
     default:
-      return { fundo: PetFlowColors.orangeSoft, texto: '#B26A00' };
+      return { fundo: cores.orangeSoft, texto: cores.warningText };
   }
 }
 

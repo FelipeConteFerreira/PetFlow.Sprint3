@@ -1,29 +1,10 @@
 import { Platform, type ViewStyle } from 'react-native';
 
-export const PetFlowColors = {
-  primary: '#2E9B5B',
-  primaryDark: '#248A4E',
-  primarySoft: '#E8F5EC',
-  orange: '#F5A623',
-  orangeSoft: '#FFF4E3',
-  blue: '#4A90D9',
-  blueDark: '#3A7FC8',
-  blueSoft: '#EAF2FB',
-  danger: '#DC2626',
-  dangerSoft: '#FEECEC',
-  text: '#1A1A1A',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
-  background: '#F8FAF9',
-  card: '#FFFFFF',
-  border: '#E5E7EB',
-  borderStrong: '#D1D5DB',
-  badge: '#E8915A',
-  badgeBg: '#FFF4ED',
-  aiBg: '#E8F5EC',
-  aiBorder: '#C8E6D0',
-  infoBg: '#F3F4F6',
-};
+/**
+ * Cores não ficam aqui: dependem do tema claro/escuro e vêm de `useTema()`
+ * (paletas em `constants/theme.ts`). Este arquivo guarda só o que não muda
+ * com o tema — espaçamento, raios e sombra.
+ */
 
 /** Escala de espaçamento. Múltiplos de 4: o olho percebe o ritmo. */
 export const Spacing = {

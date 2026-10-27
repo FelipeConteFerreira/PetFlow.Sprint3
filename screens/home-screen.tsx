@@ -4,7 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AgendamentoCard } from '@/components/agendamento-card';
 import { ErrorState } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { useHome } from '@/hooks/screens/use-home';
 import { emojiDoPet, resumoDoPet } from '@/lib/formatters';
 import { useAppNavigation } from '@/navigation/use-app-navigation';
@@ -14,6 +17,8 @@ import { useAppNavigation } from '@/navigation/use-app-navigation';
  * e cada atalho é um verbo de navegação.
  */
 export function HomeScreen() {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const home = useHome();
   const { pets, proximas, carregando } = home;
@@ -35,8 +40,8 @@ export function HomeScreen() {
           <RefreshControl
             refreshing={home.atualizando}
             onRefresh={home.recarregar}
-            tintColor={PetFlowColors.primary}
-            colors={[PetFlowColors.primary]}
+            tintColor={cores.primary}
+            colors={[cores.primary]}
           />
         }>
         <View style={styles.cabecalho}>
@@ -64,21 +69,21 @@ export function HomeScreen() {
             icone="paw"
             rotulo="Pets"
             valor={carregando ? '—' : String(pets.length)}
-            cor={PetFlowColors.primary}
+            cor={cores.primary}
             onPress={() => navigation.irParaAba('Pets')}
           />
           <Numero
             icone="calendar"
             rotulo="Próximas"
             valor={carregando ? '—' : String(proximas.length)}
-            cor={PetFlowColors.blue}
+            cor={cores.blue}
             onPress={() => navigation.irParaAba('Agenda')}
           />
           <Numero
             icone="time"
             rotulo="Hoje"
             valor={carregando ? '—' : String(home.totalHoje)}
-            cor={PetFlowColors.orange}
+            cor={cores.orange}
             onPress={() => navigation.irParaAba('Agenda')}
           />
         </View>
@@ -152,13 +157,13 @@ export function HomeScreen() {
           <Atalho
             icone="add-circle"
             rotulo="Cadastrar pet"
-            cor={PetFlowColors.primary}
+            cor={cores.primary}
             onPress={navigation.novoPet}
           />
           <Atalho
             icone="calendar"
             rotulo="Marcar consulta"
-            cor={PetFlowColors.blue}
+            cor={cores.blue}
             onPress={navigation.marcarConsulta}
           />
         </View>
@@ -180,6 +185,7 @@ function Numero({
   cor: string;
   onPress: () => void;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <Pressable
       onPress={onPress}
@@ -205,6 +211,7 @@ function Secao({
   acao?: { rotulo: string; onPress: () => void };
   children: React.ReactNode;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.secao}>
       <View style={styles.secaoCabecalho}>
@@ -229,6 +236,7 @@ function Vazio({
   acaoRotulo: string;
   onAcao: () => void;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={[styles.vazio, shadow(1)]}>
       <Text style={styles.vazioTexto}>{texto}</Text>
@@ -250,6 +258,7 @@ function Atalho({
   cor: string;
   onPress: () => void;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <Pressable
       onPress={onPress}
@@ -265,95 +274,97 @@ function Atalho({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  conteudo: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.xxl },
-  cabecalho: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginTop: Spacing.sm,
-  },
-  cabecalhoTexto: { flex: 1, paddingRight: Spacing.md },
-  marca: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: PetFlowColors.primary,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  saudacao: {
-    fontSize: 25,
-    fontWeight: '800',
-    color: PetFlowColors.text,
-    marginTop: Spacing.xs,
-    letterSpacing: -0.4,
-  },
-  subtitulo: { fontSize: 14, color: PetFlowColors.textSecondary, marginTop: Spacing.xs },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.md,
-    backgroundColor: PetFlowColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressionado: { opacity: 0.8 },
-  numeros: { flexDirection: 'row', gap: Spacing.md },
-  numero: {
-    flex: 1,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    minHeight: 102,
-    justifyContent: 'space-between',
-  },
-  numeroRotulo: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.92)',
-    fontWeight: '600',
-    marginTop: Spacing.sm,
-  },
-  numeroValor: { fontSize: 27, fontWeight: '800', color: '#fff' },
-  secao: { gap: Spacing.md },
-  secaoCabecalho: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  secaoTitulo: { fontSize: 16, fontWeight: '700', color: PetFlowColors.text },
-  secaoAcao: { fontSize: 13, fontWeight: '600', color: PetFlowColors.primary },
-  vazio: {
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    padding: Spacing.xl,
-    gap: Spacing.md,
-  },
-  vazioTexto: { fontSize: 14, lineHeight: 20, color: PetFlowColors.textSecondary },
-  vazioAcao: { fontSize: 14, fontWeight: '700', color: PetFlowColors.primary },
-  petsRolagem: { gap: Spacing.md, paddingRight: Spacing.lg },
-  petCartao: {
-    width: 132,
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    padding: Spacing.lg,
-    gap: 2,
-  },
-  petEmoji: { fontSize: 30, marginBottom: Spacing.sm },
-  petNome: { fontSize: 15, fontWeight: '700', color: PetFlowColors.text },
-  petResumo: { fontSize: 12, color: PetFlowColors.textSecondary },
-  atalhos: { flexDirection: 'row', gap: Spacing.md },
-  atalho: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
-  },
-  atalhoTexto: { fontSize: 14, fontWeight: '700', color: '#fff' },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    conteudo: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.xxl },
+    cabecalho: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      marginTop: Spacing.sm,
+    },
+    cabecalhoTexto: { flex: 1, paddingRight: Spacing.md },
+    marca: {
+      fontSize: 13,
+      fontWeight: '800',
+      color: cores.primary,
+      letterSpacing: 1.2,
+      textTransform: 'uppercase',
+    },
+    saudacao: {
+      fontSize: 25,
+      fontWeight: '800',
+      color: cores.text,
+      marginTop: Spacing.xs,
+      letterSpacing: -0.4,
+    },
+    subtitulo: { fontSize: 14, color: cores.textSecondary, marginTop: Spacing.xs },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: Radius.md,
+      backgroundColor: cores.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pressionado: { opacity: 0.8 },
+    numeros: { flexDirection: 'row', gap: Spacing.md },
+    numero: {
+      flex: 1,
+      borderRadius: Radius.lg,
+      padding: Spacing.lg,
+      minHeight: 102,
+      justifyContent: 'space-between',
+    },
+    numeroRotulo: {
+      fontSize: 13,
+      color: 'rgba(255,255,255,0.92)',
+      fontWeight: '600',
+      marginTop: Spacing.sm,
+    },
+    numeroValor: { fontSize: 27, fontWeight: '800', color: '#fff' },
+    secao: { gap: Spacing.md },
+    secaoCabecalho: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    secaoTitulo: { fontSize: 16, fontWeight: '700', color: cores.text },
+    secaoAcao: { fontSize: 13, fontWeight: '600', color: cores.primary },
+    vazio: {
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      padding: Spacing.xl,
+      gap: Spacing.md,
+    },
+    vazioTexto: { fontSize: 14, lineHeight: 20, color: cores.textSecondary },
+    vazioAcao: { fontSize: 14, fontWeight: '700', color: cores.primary },
+    petsRolagem: { gap: Spacing.md, paddingRight: Spacing.lg },
+    petCartao: {
+      width: 132,
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      padding: Spacing.lg,
+      gap: 2,
+    },
+    petEmoji: { fontSize: 30, marginBottom: Spacing.sm },
+    petNome: { fontSize: 15, fontWeight: '700', color: cores.text },
+    petResumo: { fontSize: 12, color: cores.textSecondary },
+    atalhos: { flexDirection: 'row', gap: Spacing.md },
+    atalho: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      paddingVertical: Spacing.lg,
+      borderRadius: Radius.md,
+    },
+    atalhoTexto: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  });
+}

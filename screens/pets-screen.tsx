@@ -4,7 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PetCard } from '@/components/pet-card';
 import { AsyncBoundary, EmptyState } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { usePets } from '@/hooks/use-pets';
 import { useAppNavigation } from '@/navigation/use-app-navigation';
 
@@ -16,6 +19,8 @@ import { useAppNavigation } from '@/navigation/use-app-navigation';
  * de uma edição ou de uma remoção é a invalidação de cache das mutations.
  */
 export function PetsScreen() {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const { data: pets, isPending, isFetching, error, refetch } = usePets();
 
@@ -57,8 +62,8 @@ export function PetsScreen() {
             <RefreshControl
               refreshing={isFetching}
               onRefresh={refetch}
-              tintColor={PetFlowColors.primary}
-              colors={[PetFlowColors.primary]}
+              tintColor={cores.primary}
+              colors={[cores.primary]}
             />
           }
           ListEmptyComponent={
@@ -81,27 +86,29 @@ export function PetsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.lg,
-  },
-  titulo: { fontSize: 26, fontWeight: '800', color: PetFlowColors.text, letterSpacing: -0.4 },
-  subtitulo: { fontSize: 13, color: PetFlowColors.textSecondary, marginTop: 2 },
-  adicionar: {
-    width: 46,
-    height: 46,
-    borderRadius: Radius.md,
-    backgroundColor: PetFlowColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressionado: { opacity: 0.8 },
-  lista: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.md },
-  listaVazia: { flexGrow: 1 },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.sm,
+      paddingBottom: Spacing.lg,
+    },
+    titulo: { fontSize: 26, fontWeight: '800', color: cores.text, letterSpacing: -0.4 },
+    subtitulo: { fontSize: 13, color: cores.textSecondary, marginTop: 2 },
+    adicionar: {
+      width: 46,
+      height: 46,
+      borderRadius: Radius.md,
+      backgroundColor: cores.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pressionado: { opacity: 0.8 },
+    lista: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.md },
+    listaVazia: { flexGrow: 1 },
+  });
+}

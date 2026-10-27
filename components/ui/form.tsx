@@ -13,7 +13,10 @@ import {
   View,
 } from 'react-native';
 
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 
 /** Peças de formulário compartilhadas pelas telas de cadastro e edição. */
 
@@ -30,6 +33,7 @@ export function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.campo}>
       <Text style={styles.label}>
@@ -48,11 +52,13 @@ export function Field({
 
 export const Input = forwardRef<TextInput, TextInputProps & { invalid?: boolean }>(
   function Input({ invalid, style, ...props }, ref) {
+    const { cores } = useTema();
+    const styles = useEstilos(criarEstilos);
     return (
       <TextInput
         ref={ref}
         style={[styles.input, invalid && styles.inputInvalido, style]}
-        placeholderTextColor={PetFlowColors.textMuted}
+        placeholderTextColor={cores.textMuted}
         {...props}
       />
     );
@@ -73,7 +79,7 @@ export function ChipSelect<T extends string | number>({
   valor,
   onChange,
   scroll,
-  accent = PetFlowColors.primary,
+  accent,
 }: {
   opcoes: Opcao<T>[];
   valor: T | undefined;
@@ -81,6 +87,9 @@ export function ChipSelect<T extends string | number>({
   scroll?: boolean;
   accent?: string;
 }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
+  const corAtiva = accent ?? cores.primary;
   const fichas = opcoes.map((opcao) => {
     const ativa = opcao.valor === valor;
     return (
@@ -92,7 +101,7 @@ export function ChipSelect<T extends string | number>({
         }}
         style={({ pressed }) => [
           styles.chip,
-          ativa && { backgroundColor: accent, borderColor: accent },
+          ativa && { backgroundColor: corAtiva, borderColor: corAtiva },
           pressed && styles.pressionado,
         ]}>
         <Text style={[styles.chipTexto, ativa && styles.chipTextoAtivo]}>{opcao.rotulo}</Text>
@@ -133,12 +142,14 @@ export function PrimaryButton({
   icon?: keyof typeof Ionicons.glyphMap;
   tone?: 'primary' | 'danger' | 'neutro';
 }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const fundo = {
-    primary: PetFlowColors.primary,
-    danger: PetFlowColors.danger,
-    neutro: PetFlowColors.card,
+    primary: cores.primary,
+    danger: cores.danger,
+    neutro: cores.card,
   }[tone];
-  const cor = tone === 'neutro' ? PetFlowColors.text : '#fff';
+  const cor = tone === 'neutro' ? cores.text : '#fff';
 
   return (
     <Pressable
@@ -169,71 +180,75 @@ export function PrimaryButton({
 
 /** Aviso de erro de escrita, acima do botão de salvar. */
 export function FormError({ message }: { message: string | null }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   if (!message) return null;
   return (
     <View style={styles.avisoErro}>
-      <Ionicons name="alert-circle" size={18} color={PetFlowColors.danger} />
+      <Ionicons name="alert-circle" size={18} color={cores.danger} />
       <Text style={styles.avisoErroTexto}>{message}</Text>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  campo: { marginBottom: Spacing.lg },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: PetFlowColors.text,
-    marginBottom: Spacing.sm,
-  },
-  obrigatorio: { color: PetFlowColors.danger },
-  dica: { fontSize: 12, color: PetFlowColors.textMuted, marginTop: 6 },
-  erro: { fontSize: 12, color: PetFlowColors.danger, marginTop: 6, fontWeight: '500' },
-  input: {
-    borderWidth: 1,
-    borderColor: PetFlowColors.borderStrong,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md + 2,
-    fontSize: 16,
-    backgroundColor: PetFlowColors.card,
-    color: PetFlowColors.text,
-  },
-  inputInvalido: { borderColor: PetFlowColors.danger, backgroundColor: PetFlowColors.dangerSoft },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
-  chipsRolagem: { flexDirection: 'row', gap: Spacing.sm, paddingRight: Spacing.lg },
-  chip: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md - 2,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    backgroundColor: PetFlowColors.card,
-  },
-  chipTexto: { fontSize: 14, fontWeight: '600', color: PetFlowColors.textSecondary },
-  chipTextoAtivo: { color: '#fff' },
-  chipDetalhe: { fontSize: 11, color: PetFlowColors.textMuted, marginTop: 2 },
-  chipDetalheAtivo: { color: 'rgba(255,255,255,0.85)' },
-  botao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.lg,
-    borderRadius: Radius.md,
-  },
-  botaoNeutro: { borderWidth: 1, borderColor: PetFlowColors.border },
-  botaoDesabilitado: { opacity: 0.55 },
-  botaoTexto: { fontSize: 16, fontWeight: '700' },
-  pressionado: { opacity: 0.85 },
-  avisoErro: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    backgroundColor: PetFlowColors.dangerSoft,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  avisoErroTexto: { flex: 1, fontSize: 13, color: PetFlowColors.danger, lineHeight: 18 },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    campo: { marginBottom: Spacing.lg },
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: cores.text,
+      marginBottom: Spacing.sm,
+    },
+    obrigatorio: { color: cores.danger },
+    dica: { fontSize: 12, color: cores.textMuted, marginTop: 6 },
+    erro: { fontSize: 12, color: cores.danger, marginTop: 6, fontWeight: '500' },
+    input: {
+      borderWidth: 1,
+      borderColor: cores.borderStrong,
+      borderRadius: Radius.md,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md + 2,
+      fontSize: 16,
+      backgroundColor: cores.card,
+      color: cores.text,
+    },
+    inputInvalido: { borderColor: cores.danger, backgroundColor: cores.dangerSoft },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+    chipsRolagem: { flexDirection: 'row', gap: Spacing.sm, paddingRight: Spacing.lg },
+    chip: {
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md - 2,
+      borderRadius: Radius.pill,
+      borderWidth: 1,
+      borderColor: cores.border,
+      backgroundColor: cores.card,
+    },
+    chipTexto: { fontSize: 14, fontWeight: '600', color: cores.textSecondary },
+    chipTextoAtivo: { color: '#fff' },
+    chipDetalhe: { fontSize: 11, color: cores.textMuted, marginTop: 2 },
+    chipDetalheAtivo: { color: 'rgba(255,255,255,0.85)' },
+    botao: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      paddingVertical: Spacing.lg,
+      borderRadius: Radius.md,
+    },
+    botaoNeutro: { borderWidth: 1, borderColor: cores.border },
+    botaoDesabilitado: { opacity: 0.55 },
+    botaoTexto: { fontSize: 16, fontWeight: '700' },
+    pressionado: { opacity: 0.85 },
+    avisoErro: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: Spacing.sm,
+      backgroundColor: cores.dangerSoft,
+      borderRadius: Radius.md,
+      padding: Spacing.md,
+      marginBottom: Spacing.lg,
+    },
+    avisoErroTexto: { flex: 1, fontSize: 13, color: cores.danger, lineHeight: 18 },
+  });
+}

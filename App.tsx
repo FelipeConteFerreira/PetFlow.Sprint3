@@ -1,29 +1,58 @@
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer, type Theme } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
+import { useMemo } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/contexts/auth-context';
+import { TemaProvider, useTema } from '@/contexts/theme-context';
 import { queryClient } from '@/lib/query-client';
 import { RootNavigator } from '@/navigation/root-navigator';
 
 /**
  * Raiz do aplicativo: só monta os provedores, de fora para dentro.
  *
- * Cache do TanStack Query → sessão → contêiner de navegação. A sessão fica
- * acima da navegação porque é ela que decide quais telas existem.
+ * Tema → cache do TanStack Query → sessão → navegação. O tema fica por fora
+ * de tudo porque até a tela de carregamento da sessão já precisa das cores.
  */
 export default function App() {
   return (
     <SafeAreaProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NavigationContainer>
-            <RootNavigator />
-            <StatusBar style="dark" />
-          </NavigationContainer>
-        </AuthProvider>
-      </QueryClientProvider>
+      <TemaProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Navegacao />
+          </AuthProvider>
+        </QueryClientProvider>
+      </TemaProvider>
     </SafeAreaProvider>
+  );
+}
+
+/** Contêiner de navegação com as cores do tema ativo. */
+function Navegacao() {
+  const { cores, esquema } = useTema();
+
+  const temaNavegacao = useMemo<Theme>(() => {
+    const base = esquema === 'escuro' ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        primary: cores.primary,
+        background: cores.background,
+        card: cores.card,
+        text: cores.text,
+        border: cores.border,
+        notification: cores.danger,
+      },
+    };
+  }, [cores, esquema]);
+
+  return (
+    <NavigationContainer theme={temaNavegacao}>
+      <RootNavigator />
+      <StatusBar style={esquema === 'escuro' ? 'light' : 'dark'} />
+    </NavigationContainer>
   );
 }

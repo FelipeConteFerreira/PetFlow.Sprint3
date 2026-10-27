@@ -2,7 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
+import { Radius, Spacing } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 
 /**
  * Os três estados que toda tela que carrega dados precisa mostrar.
@@ -13,9 +16,11 @@ import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
  */
 
 export function LoadingState({ label = 'Carregando…' }: { label?: string }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.centro}>
-      <ActivityIndicator size="large" color={PetFlowColors.primary} />
+      <ActivityIndicator size="large" color={cores.primary} />
       <Text style={styles.legenda}>{label}</Text>
     </View>
   );
@@ -35,10 +40,12 @@ export function ErrorState({
   onRetry: () => void;
   retrying?: boolean;
 }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.centro}>
       <View style={[styles.icone, styles.iconeErro]}>
-        <Ionicons name="cloud-offline-outline" size={28} color={PetFlowColors.danger} />
+        <Ionicons name="cloud-offline-outline" size={28} color={cores.danger} />
       </View>
       <Text style={styles.titulo}>Não foi possível carregar</Text>
       <Text style={styles.legenda}>{message}</Text>
@@ -77,6 +84,7 @@ export function EmptyState({
   actionLabel?: string;
   onAction?: () => void;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.centro}>
       <View style={styles.icone}>
@@ -127,50 +135,52 @@ export function AsyncBoundary({
   return null;
 }
 
-const styles = StyleSheet.create({
-  centro: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.xxl,
-    paddingVertical: 48,
-  },
-  icone: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: PetFlowColors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.lg,
-  },
-  iconeErro: { backgroundColor: PetFlowColors.dangerSoft },
-  emoji: { fontSize: 34 },
-  titulo: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: PetFlowColors.text,
-    textAlign: 'center',
-  },
-  legenda: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: PetFlowColors.textSecondary,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  botao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.xl,
-    backgroundColor: PetFlowColors.primary,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    borderRadius: Radius.md,
-    minWidth: 168,
-    justifyContent: 'center',
-  },
-  pressionado: { opacity: 0.85 },
-  botaoTexto: { color: '#fff', fontWeight: '700', fontSize: 15 },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    centro: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.xxl,
+      paddingVertical: 48,
+    },
+    icone: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: cores.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Spacing.lg,
+    },
+    iconeErro: { backgroundColor: cores.dangerSoft },
+    emoji: { fontSize: 34 },
+    titulo: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: cores.text,
+      textAlign: 'center',
+    },
+    legenda: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: cores.textSecondary,
+      textAlign: 'center',
+      marginTop: Spacing.sm,
+    },
+    botao: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.sm,
+      marginTop: Spacing.xl,
+      backgroundColor: cores.primary,
+      paddingHorizontal: Spacing.xl,
+      paddingVertical: Spacing.md,
+      borderRadius: Radius.md,
+      minWidth: 168,
+      justifyContent: 'center',
+    },
+    pressionado: { opacity: 0.85 },
+    botaoTexto: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  });
+}

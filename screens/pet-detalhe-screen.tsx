@@ -6,7 +6,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/ui/form';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { AsyncBoundary } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { usePetDetalhe } from '@/hooks/screens/use-pet-detalhe';
 import {
   PET_STATUS_LABEL,
@@ -27,6 +30,7 @@ import { useAppNavigation } from '@/navigation/use-app-navigation';
  * consultas nem vacinas, e isso não é erro.
  */
 export function PetDetalheScreen() {
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const { params } = useRoute<RouteProp<RootStackParamList, 'PetDetalhe'>>();
   const petId = params.petId;
@@ -180,9 +184,11 @@ export function PetDetalheScreen() {
 }
 
 function Pilula({ icone, texto }: { icone: keyof typeof Ionicons.glyphMap; texto: string }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.pilula}>
-      <Ionicons name={icone} size={13} color={PetFlowColors.primaryDark} />
+      <Ionicons name={icone} size={13} color={cores.primaryDark} />
       <Text style={styles.pilulaTexto}>{texto}</Text>
     </View>
   );
@@ -197,6 +203,7 @@ function Secao({
   contagem?: number;
   children: React.ReactNode;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.secao}>
       <View style={styles.secaoCabecalho}>
@@ -217,6 +224,7 @@ function Linha({
   valor: string;
   ultima?: boolean;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={[styles.linha, !ultima && styles.linhaBorda]}>
       <Text style={styles.linhaRotulo} numberOfLines={1}>
@@ -229,92 +237,94 @@ function Linha({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  conteudo: { padding: Spacing.xl, paddingBottom: 40, gap: Spacing.xl },
-  hero: {
-    alignItems: 'center',
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    padding: Spacing.xxl,
-  },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: PetFlowColors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emoji: { fontSize: 44 },
-  nome: {
-    fontSize: 23,
-    fontWeight: '800',
-    color: PetFlowColors.text,
-    marginTop: Spacing.md,
-  },
-  raca: { fontSize: 14, color: PetFlowColors.textSecondary, marginTop: 2 },
-  pilulas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
-  },
-  pilula: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: PetFlowColors.primarySoft,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 6,
-    borderRadius: Radius.pill,
-  },
-  pilulaTexto: { fontSize: 12, fontWeight: '600', color: PetFlowColors.primaryDark },
-  secao: { gap: Spacing.md },
-  secaoCabecalho: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  secaoTitulo: { fontSize: 15, fontWeight: '700', color: PetFlowColors.text },
-  secaoContagem: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: PetFlowColors.textSecondary,
-    backgroundColor: PetFlowColors.infoBg,
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: Radius.pill,
-    overflow: 'hidden',
-  },
-  cartao: {
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    paddingHorizontal: Spacing.lg,
-  },
-  linha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.lg,
-    paddingVertical: Spacing.md + 1,
-  },
-  linhaBorda: { borderBottomWidth: 1, borderBottomColor: PetFlowColors.border },
-  linhaRotulo: { flex: 1, fontSize: 14, color: PetFlowColors.textSecondary },
-  linhaValor: { fontSize: 14, fontWeight: '600', color: PetFlowColors.text, maxWidth: '55%' },
-  observacao: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: PetFlowColors.text,
-    paddingVertical: Spacing.lg,
-  },
-  vazio: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: PetFlowColors.textSecondary,
-    paddingVertical: Spacing.lg,
-  },
-  erroRemocao: { fontSize: 13, color: PetFlowColors.danger, textAlign: 'center' },
-  acoes: { gap: Spacing.md },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    conteudo: { padding: Spacing.xl, paddingBottom: 40, gap: Spacing.xl },
+    hero: {
+      alignItems: 'center',
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      padding: Spacing.xxl,
+    },
+    avatar: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: cores.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emoji: { fontSize: 44 },
+    nome: {
+      fontSize: 23,
+      fontWeight: '800',
+      color: cores.text,
+      marginTop: Spacing.md,
+    },
+    raca: { fontSize: 14, color: cores.textSecondary, marginTop: 2 },
+    pilulas: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      marginTop: Spacing.lg,
+    },
+    pilula: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: cores.primarySoft,
+      paddingHorizontal: Spacing.md,
+      paddingVertical: 6,
+      borderRadius: Radius.pill,
+    },
+    pilulaTexto: { fontSize: 12, fontWeight: '600', color: cores.primaryDark },
+    secao: { gap: Spacing.md },
+    secaoCabecalho: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+    secaoTitulo: { fontSize: 15, fontWeight: '700', color: cores.text },
+    secaoContagem: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: cores.textSecondary,
+      backgroundColor: cores.infoBg,
+      paddingHorizontal: 7,
+      paddingVertical: 2,
+      borderRadius: Radius.pill,
+      overflow: 'hidden',
+    },
+    cartao: {
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      paddingHorizontal: Spacing.lg,
+    },
+    linha: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.lg,
+      paddingVertical: Spacing.md + 1,
+    },
+    linhaBorda: { borderBottomWidth: 1, borderBottomColor: cores.border },
+    linhaRotulo: { flex: 1, fontSize: 14, color: cores.textSecondary },
+    linhaValor: { fontSize: 14, fontWeight: '600', color: cores.text, maxWidth: '55%' },
+    observacao: {
+      fontSize: 14,
+      lineHeight: 21,
+      color: cores.text,
+      paddingVertical: Spacing.lg,
+    },
+    vazio: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: cores.textSecondary,
+      paddingVertical: Spacing.lg,
+    },
+    erroRemocao: { fontSize: 13, color: cores.danger, textAlign: 'center' },
+    acoes: { gap: Spacing.md },
+  });
+}

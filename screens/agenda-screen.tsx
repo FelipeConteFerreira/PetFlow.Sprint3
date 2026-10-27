@@ -4,7 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AgendamentoCard } from '@/components/agendamento-card';
 import { AsyncBoundary, EmptyState } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { useAgendaScreen } from '@/hooks/screens/use-agenda-screen';
 import { useAppNavigation } from '@/navigation/use-app-navigation';
 import type { AgendamentoResponse } from '@/types/api';
@@ -14,6 +17,8 @@ import type { AgendamentoResponse } from '@/types/api';
  * `useAgendaScreen`; aqui fica apenas o diálogo de confirmação.
  */
 export function AgendaScreen() {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
   const agenda = useAgendaScreen();
 
@@ -82,8 +87,8 @@ export function AgendaScreen() {
             <RefreshControl
               refreshing={agenda.atualizando}
               onRefresh={agenda.recarregar}
-              tintColor={PetFlowColors.primary}
-              colors={[PetFlowColors.primary]}
+              tintColor={cores.primary}
+              colors={[cores.primary]}
             />
           }
           ListEmptyComponent={
@@ -124,50 +129,52 @@ export function AgendaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.lg,
-  },
-  titulo: { fontSize: 26, fontWeight: '800', color: PetFlowColors.text, letterSpacing: -0.4 },
-  subtitulo: { fontSize: 13, color: PetFlowColors.textSecondary, marginTop: 2 },
-  adicionar: {
-    width: 46,
-    height: 46,
-    borderRadius: Radius.md,
-    backgroundColor: PetFlowColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressionado: { opacity: 0.8 },
-  filtros: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.lg,
-  },
-  filtro: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.pill,
-    backgroundColor: PetFlowColors.card,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-  },
-  filtroAtivo: { backgroundColor: PetFlowColors.text, borderColor: PetFlowColors.text },
-  filtroTexto: { fontSize: 13, fontWeight: '600', color: PetFlowColors.textSecondary },
-  filtroTextoAtivo: { color: '#fff' },
-  erroAcao: {
-    marginHorizontal: Spacing.xl,
-    marginBottom: Spacing.md,
-    fontSize: 13,
-    color: PetFlowColors.danger,
-  },
-  lista: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.md },
-  listaVazia: { flexGrow: 1 },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: Spacing.xl,
+      paddingTop: Spacing.sm,
+      paddingBottom: Spacing.lg,
+    },
+    titulo: { fontSize: 26, fontWeight: '800', color: cores.text, letterSpacing: -0.4 },
+    subtitulo: { fontSize: 13, color: cores.textSecondary, marginTop: 2 },
+    adicionar: {
+      width: 46,
+      height: 46,
+      borderRadius: Radius.md,
+      backgroundColor: cores.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pressionado: { opacity: 0.8 },
+    filtros: {
+      flexDirection: 'row',
+      gap: Spacing.sm,
+      paddingHorizontal: Spacing.xl,
+      paddingBottom: Spacing.lg,
+    },
+    filtro: {
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.sm,
+      borderRadius: Radius.pill,
+      backgroundColor: cores.card,
+      borderWidth: 1,
+      borderColor: cores.border,
+    },
+    filtroAtivo: { backgroundColor: cores.text, borderColor: cores.text },
+    filtroTexto: { fontSize: 13, fontWeight: '600', color: cores.textSecondary },
+    filtroTextoAtivo: { color: '#fff' },
+    erroAcao: {
+      marginHorizontal: Spacing.xl,
+      marginBottom: Spacing.md,
+      fontSize: 13,
+      color: cores.danger,
+    },
+    lista: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl, gap: Spacing.md },
+    listaVazia: { flexGrow: 1 },
+  });
+}

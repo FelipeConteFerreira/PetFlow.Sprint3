@@ -2,8 +2,12 @@ import { Feather } from '@expo/vector-icons';
 import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ChipSelect } from '@/components/ui/form';
 import { AsyncBoundary } from '@/components/ui/screen-state';
-import { PetFlowColors, Radius, Spacing, shadow } from '@/constants/petflow';
+import { Radius, Spacing, shadow } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { usePerfil } from '@/hooks/screens/use-perfil';
 import { formatarData } from '@/lib/formatters';
 import { AVATARES } from '@/lib/preferences';
@@ -16,6 +20,8 @@ import { AVATARES } from '@/lib/preferences';
  * de uma tela que falharia ao salvar, o app diz onde a alteração é feita.
  */
 export function ProfileScreen() {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const perfil = usePerfil();
   const { tutor } = perfil;
 
@@ -44,8 +50,8 @@ export function ProfileScreen() {
             <RefreshControl
               refreshing={perfil.atualizando}
               onRefresh={perfil.recarregar}
-              tintColor={PetFlowColors.primary}
-              colors={[PetFlowColors.primary]}
+              tintColor={cores.primary}
+              colors={[cores.primary]}
             />
           }>
           <View style={[styles.cabecalho, shadow(1)]}>
@@ -93,19 +99,32 @@ export function ProfileScreen() {
           </Bloco>
 
           <View style={styles.aviso}>
-            <Feather name="info" size={16} color={PetFlowColors.blueDark} />
+            <Feather name="info" size={16} color={cores.blueDark} />
             <Text style={styles.avisoTexto}>
               Para alterar nome, e-mail ou telefone, fale com a sua clínica — é ela que mantém o
               seu cadastro.
             </Text>
           </View>
 
+          <Bloco titulo="Aparência">
+            <View style={styles.aparencia}>
+              <ChipSelect
+                opcoes={perfil.opcoesDeTema}
+                valor={perfil.temaPreferido}
+                onChange={perfil.escolherTema}
+              />
+              <Text style={styles.aparenciaDica}>
+                “Sistema” acompanha o modo claro/escuro do seu celular.
+              </Text>
+            </View>
+          </Bloco>
+
           <Bloco titulo="Conta">
             <Pressable
               style={({ pressed }) => [styles.acao, pressed && styles.pressionado]}
               onPress={confirmarSaida}>
               <View style={styles.acaoIcone}>
-                <Feather name="log-out" size={17} color={PetFlowColors.danger} />
+                <Feather name="log-out" size={17} color={cores.danger} />
               </View>
               <Text style={styles.acaoTexto}>Sair da conta</Text>
             </Pressable>
@@ -119,6 +138,7 @@ export function ProfileScreen() {
 }
 
 function Numero({ valor, rotulo }: { valor: number; rotulo: string }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.numero}>
       <Text style={styles.numeroValor}>{valor}</Text>
@@ -128,6 +148,7 @@ function Numero({ valor, rotulo }: { valor: number; rotulo: string }) {
 }
 
 function Bloco({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.bloco}>
       <Text style={styles.blocoTitulo}>{titulo}</Text>
@@ -145,6 +166,7 @@ function Linha({
   valor: string;
   ultima?: boolean;
 }) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={[styles.linha, !ultima && styles.linhaBorda]}>
       <Text style={styles.linhaRotulo}>{rotulo}</Text>
@@ -155,130 +177,134 @@ function Linha({
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: PetFlowColors.background },
-  conteudo: { padding: Spacing.xl, paddingBottom: 40, gap: Spacing.xl },
-  cabecalho: {
-    alignItems: 'center',
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    padding: Spacing.xxl,
-  },
-  avatar: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: PetFlowColors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEmoji: { fontSize: 40 },
-  avatarLapis: {
-    position: 'absolute',
-    right: 0,
-    bottom: 2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: PetFlowColors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: PetFlowColors.card,
-  },
-  pressionado: { opacity: 0.75 },
-  nome: {
-    fontSize: 21,
-    fontWeight: '800',
-    color: PetFlowColors.text,
-    marginTop: Spacing.md,
-    textAlign: 'center',
-  },
-  email: { fontSize: 14, color: PetFlowColors.textSecondary, marginTop: 2 },
-  avatares: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.lg,
-  },
-  avatarOpcao: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: PetFlowColors.background,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-  },
-  avatarOpcaoAtiva: {
-    borderColor: PetFlowColors.primary,
-    backgroundColor: PetFlowColors.primarySoft,
-  },
-  avatarOpcaoEmoji: { fontSize: 22 },
-  numeros: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xl,
-    paddingTop: Spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: PetFlowColors.border,
-    alignSelf: 'stretch',
-  },
-  numero: { flex: 1, alignItems: 'center' },
-  numeroValor: { fontSize: 20, fontWeight: '800', color: PetFlowColors.primary },
-  numeroRotulo: { fontSize: 12, color: PetFlowColors.textSecondary, marginTop: 2 },
-  divisor: { width: 1, height: 32, backgroundColor: PetFlowColors.border },
-  bloco: { gap: Spacing.md },
-  blocoTitulo: { fontSize: 15, fontWeight: '700', color: PetFlowColors.text },
-  blocoCartao: {
-    backgroundColor: PetFlowColors.card,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: PetFlowColors.border,
-    paddingHorizontal: Spacing.lg,
-  },
-  linha: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.lg,
-    paddingVertical: Spacing.md + 1,
-  },
-  linhaBorda: { borderBottomWidth: 1, borderBottomColor: PetFlowColors.border },
-  linhaRotulo: { fontSize: 14, color: PetFlowColors.textSecondary },
-  linhaValor: { fontSize: 14, fontWeight: '600', color: PetFlowColors.text, maxWidth: '58%' },
-  aviso: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.md,
-    backgroundColor: PetFlowColors.blueSoft,
-    borderRadius: Radius.md,
-    padding: Spacing.lg,
-  },
-  avisoTexto: { flex: 1, fontSize: 13, lineHeight: 19, color: PetFlowColors.blueDark },
-  acao: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.lg,
-  },
-  acaoIcone: {
-    width: 38,
-    height: 38,
-    borderRadius: Radius.sm,
-    backgroundColor: PetFlowColors.dangerSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  acaoTexto: { fontSize: 15, fontWeight: '600', color: PetFlowColors.danger },
-  rodape: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: PetFlowColors.textMuted,
-    marginTop: Spacing.sm,
-  },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    safe: { flex: 1, backgroundColor: cores.background },
+    conteudo: { padding: Spacing.xl, paddingBottom: 40, gap: Spacing.xl },
+    cabecalho: {
+      alignItems: 'center',
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      padding: Spacing.xxl,
+    },
+    avatar: {
+      width: 84,
+      height: 84,
+      borderRadius: 42,
+      backgroundColor: cores.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarEmoji: { fontSize: 40 },
+    avatarLapis: {
+      position: 'absolute',
+      right: 0,
+      bottom: 2,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: cores.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: cores.card,
+    },
+    pressionado: { opacity: 0.75 },
+    nome: {
+      fontSize: 21,
+      fontWeight: '800',
+      color: cores.text,
+      marginTop: Spacing.md,
+      textAlign: 'center',
+    },
+    email: { fontSize: 14, color: cores.textSecondary, marginTop: 2 },
+    avatares: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: Spacing.sm,
+      marginTop: Spacing.lg,
+    },
+    avatarOpcao: {
+      width: 44,
+      height: 44,
+      borderRadius: Radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: cores.background,
+      borderWidth: 1,
+      borderColor: cores.border,
+    },
+    avatarOpcaoAtiva: {
+      borderColor: cores.primary,
+      backgroundColor: cores.primarySoft,
+    },
+    avatarOpcaoEmoji: { fontSize: 22 },
+    numeros: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: Spacing.xl,
+      paddingTop: Spacing.lg,
+      borderTopWidth: 1,
+      borderTopColor: cores.border,
+      alignSelf: 'stretch',
+    },
+    numero: { flex: 1, alignItems: 'center' },
+    numeroValor: { fontSize: 20, fontWeight: '800', color: cores.primary },
+    numeroRotulo: { fontSize: 12, color: cores.textSecondary, marginTop: 2 },
+    divisor: { width: 1, height: 32, backgroundColor: cores.border },
+    bloco: { gap: Spacing.md },
+    blocoTitulo: { fontSize: 15, fontWeight: '700', color: cores.text },
+    blocoCartao: {
+      backgroundColor: cores.card,
+      borderRadius: Radius.lg,
+      borderWidth: 1,
+      borderColor: cores.border,
+      paddingHorizontal: Spacing.lg,
+    },
+    linha: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Spacing.lg,
+      paddingVertical: Spacing.md + 1,
+    },
+    linhaBorda: { borderBottomWidth: 1, borderBottomColor: cores.border },
+    linhaRotulo: { fontSize: 14, color: cores.textSecondary },
+    linhaValor: { fontSize: 14, fontWeight: '600', color: cores.text, maxWidth: '58%' },
+    aviso: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: Spacing.md,
+      backgroundColor: cores.blueSoft,
+      borderRadius: Radius.md,
+      padding: Spacing.lg,
+    },
+    avisoTexto: { flex: 1, fontSize: 13, lineHeight: 19, color: cores.blueDark },
+    aparencia: { paddingVertical: Spacing.lg, gap: Spacing.sm },
+    aparenciaDica: { fontSize: 12, color: cores.textMuted },
+    acao: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingVertical: Spacing.lg,
+    },
+    acaoIcone: {
+      width: 38,
+      height: 38,
+      borderRadius: Radius.sm,
+      backgroundColor: cores.dangerSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    acaoTexto: { fontSize: 15, fontWeight: '600', color: cores.danger },
+    rodape: {
+      textAlign: 'center',
+      fontSize: 12,
+      color: cores.textMuted,
+      marginTop: Spacing.sm,
+    },
+  });
+}

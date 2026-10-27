@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { PetFlowColors, Radius, Spacing } from '@/constants/petflow';
+import { Radius, Spacing } from '@/constants/petflow';
+import type { Paleta } from '@/constants/theme';
+import { useTema } from '@/contexts/theme-context';
+import { useEstilos } from '@/hooks/use-estilos';
 import { useAppNavigation } from '@/navigation/use-app-navigation';
 
 /** Cabeçalho das telas empilhadas: voltar, título e uma ação opcional. */
@@ -14,6 +17,8 @@ export function ScreenHeader({
   subtitle?: string;
   action?: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void };
 }) {
+  const { cores } = useTema();
+  const styles = useEstilos(criarEstilos);
   const navigation = useAppNavigation();
 
   return (
@@ -23,7 +28,7 @@ export function ScreenHeader({
         style={({ pressed }) => [styles.icone, pressed && styles.pressionado]}
         accessibilityLabel="Voltar"
         hitSlop={12}>
-        <Ionicons name="arrow-back" size={22} color={PetFlowColors.text} />
+        <Ionicons name="arrow-back" size={22} color={cores.text} />
       </Pressable>
 
       <View style={styles.textos}>
@@ -43,7 +48,7 @@ export function ScreenHeader({
           style={({ pressed }) => [styles.icone, pressed && styles.pressionado]}
           accessibilityLabel={action.label}
           hitSlop={12}>
-          <Ionicons name={action.icon} size={22} color={PetFlowColors.text} />
+          <Ionicons name={action.icon} size={22} color={cores.text} />
         </Pressable>
       ) : (
         <View style={styles.icone} />
@@ -52,24 +57,26 @@ export function ScreenHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    backgroundColor: PetFlowColors.background,
-  },
-  icone: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pressionado: { opacity: 0.6 },
-  textos: { flex: 1, alignItems: 'center' },
-  titulo: { fontSize: 17, fontWeight: '700', color: PetFlowColors.text },
-  subtitulo: { fontSize: 12, color: PetFlowColors.textSecondary, marginTop: 2 },
-});
+function criarEstilos(cores: Paleta) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Spacing.md,
+      paddingHorizontal: Spacing.lg,
+      paddingVertical: Spacing.md,
+      backgroundColor: cores.background,
+    },
+    icone: {
+      width: 40,
+      height: 40,
+      borderRadius: Radius.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pressionado: { opacity: 0.6 },
+    textos: { flex: 1, alignItems: 'center' },
+    titulo: { fontSize: 17, fontWeight: '700', color: cores.text },
+    subtitulo: { fontSize: 12, color: cores.textSecondary, marginTop: 2 },
+  });
+}
