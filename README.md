@@ -192,7 +192,7 @@ professor cadastrado como tester.
 |---|---|
 | Pacote Android | `br.com.clyvovet.petflow` |
 | Gerar o APK | `npm run build:apk` |
-| Commit publicado | `PREENCHER` (o mesmo da tela Sobre o App) |
+| Commit publicado | `4e0786c` (o mesmo da tela Sobre o App) |
 
 Passo a passo completo, com checklist de conferência: [`docs/PUBLICACAO.md`](docs/PUBLICACAO.md).
 
