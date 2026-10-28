@@ -59,25 +59,30 @@ export async function configurarNotificacoes(): Promise<void> {
   }
 }
 
-function traduzirPermissao(status: Notifications.PermissionStatus): PermissaoNotificacao {
-  if (status === Notifications.PermissionStatus.GRANTED) return 'concedida';
-  if (status === Notifications.PermissionStatus.DENIED) return 'negada';
-  return 'pendente';
+/**
+ * Traduz a resposta do sistema.
+ *
+ * No Android 13+ o sistema responde `denied` antes mesmo de o usuário ter sido
+ * perguntado (as notificações nascem desligadas). Por isso a decisão não usa o
+ * `status`: concedida é `granted`; negada de verdade é quando o sistema já não
+ * deixa perguntar (`canAskAgain` falso); o resto ainda pode ser pedido.
+ */
+function traduzirPermissao(
+  resposta: Notifications.NotificationPermissionsStatus
+): PermissaoNotificacao {
+  if (resposta.granted) return 'concedida';
+  return resposta.canAskAgain ? 'pendente' : 'negada';
 }
 
 export async function lerPermissao(): Promise<PermissaoNotificacao> {
-  const { status } = await Notifications.getPermissionsAsync();
-  return traduzirPermissao(status);
+  return traduzirPermissao(await Notifications.getPermissionsAsync());
 }
 
-/** Pede a permissão só se ainda não foi respondida. */
+/** Pede a permissão quando ainda é possível pedir; senão só informa. */
 export async function pedirPermissao(): Promise<PermissaoNotificacao> {
-  const atual = await Notifications.getPermissionsAsync();
-  if (atual.status !== Notifications.PermissionStatus.UNDETERMINED) {
-    return traduzirPermissao(atual.status);
-  }
-  const { status } = await Notifications.requestPermissionsAsync();
-  return traduzirPermissao(status);
+  const atual = traduzirPermissao(await Notifications.getPermissionsAsync());
+  if (atual !== 'pendente') return atual;
+  return traduzirPermissao(await Notifications.requestPermissionsAsync());
 }
 
 function conteudo(n: NovaNotificacao): Notifications.NotificationContentInput {
