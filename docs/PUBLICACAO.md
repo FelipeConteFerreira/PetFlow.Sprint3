@@ -80,8 +80,9 @@ O ID do app está em **Configurações do projeto → Seus apps** (formato
 ## 5. Conferir antes de entregar
 
 - [ ] Instalar pelo convite do Firebase num celular real (não pelo Expo Go).
-- [ ] Abrir **Sobre o App**: o hash bate com `git log -1` do repositório entregue
-      e **não** tem o aviso de "alterações não commitadas".
+- [ ] Abrir **Sobre o App**: o hash é o do último commit de código do
+      repositório entregue (depois dele, só commits de documentação) e **não**
+      tem o aviso de "alterações não commitadas".
 - [ ] Testar notificação: marcar uma consulta e ver o aviso na hora.
 - [ ] O professor aparece em **Testers** com o convite enviado.
 - [ ] Gravar o vídeo **com este mesmo APK** (o requisito pede coerência entre
