@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { useAgendamentos, useCancelarAgendamento } from '@/hooks/use-agendamentos';
 import { usePets } from '@/hooks/use-pets';
 import { getErrorMessage } from '@/lib/api/errors';
-import { hojeISO, porDataHora } from '@/lib/formatters';
+import { hojeISO, porDataHora, proximasConsultas } from '@/lib/formatters';
 
 export type FiltroAgenda = 'proximos' | 'todos';
 
@@ -19,9 +19,9 @@ export function useAgendaScreen() {
   const hoje = hojeISO();
 
   const visiveis = useMemo(() => {
-    const lista = [...(agendamentos.data ?? [])].sort(porDataHora);
-    if (filtro === 'todos') return lista.reverse();
-    return lista.filter((a) => a.dtAgendamento >= hoje && a.status !== 'CANCELADO');
+    const lista = agendamentos.data ?? [];
+    if (filtro === 'todos') return [...lista].sort(porDataHora).reverse();
+    return proximasConsultas(lista, hoje);
   }, [agendamentos.data, filtro, hoje]);
 
   return {
