@@ -1,6 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { formatarData, formatarHora, statusOuPadrao } from '@/lib/formatters';
+import { formatarData, formatarHora } from '@/lib/formatters';
+import {
+  type AgendaConhecida,
+  type MudancaNaAgenda,
+  type SituacaoConhecida,
+  consultaAtiva,
+  mudancasNaAgenda,
+  retratoDaAgenda,
+  retratoSalvo,
+} from '@/lib/mudancas-agenda';
 import {
   type NovaNotificacao,
   agendarPara,
@@ -23,9 +32,10 @@ import type {
  *
  * 1. **Consulta marcada ou remarcada** (ação do tutor): aviso na hora, com a
  *    data, e lembretes agendados para 24 h e 2 h antes.
- * 2. **Consulta confirmada ou cancelada pela clínica** (processamento no
- *    backend): a agenda sincronizada com a API é comparada com o último status
- *    conhecido; o que mudou do lado da clínica vira notificação.
+ * 2. **Consulta marcada, remarcada, confirmada ou cancelada pela clínica**
+ *    (processamento no backend): a agenda sincronizada com a API é comparada
+ *    com o último retrato conhecido (`lib/mudancas-agenda.ts`); o que mudou do
+ *    lado da clínica vira notificação.
  * 3. **Reforço de vacina** (dado da carteira de vacinação vinda da API):
  *    lembretes 7 dias antes e no dia do `proximoReforco`.
  *
@@ -41,8 +51,6 @@ const HORA_DO_LEMBRETE_DE_VACINA = 9;
 const PREFIXO_CONSULTA = 'consulta-';
 const CHAVE_STATUS_CONHECIDO = '@petflow/agenda-status';
 
-type StatusConhecido = Record<string, AgendamentoStatus>;
-
 // ---------- datas ----------
 
 /** `yyyy-MM-dd` + `HH:mm` no fuso do aparelho. */
@@ -51,11 +59,6 @@ function dataHoraLocal(data: string, hora = '00:00'): Date | null {
   const [h, min] = hora.split(':').map(Number);
   if (!ano || !mes || !dia) return null;
   return new Date(ano, mes - 1, dia, h || 0, min || 0);
-}
-
-function consultaAtiva(ag: AgendamentoResponse): boolean {
-  const status = statusOuPadrao(ag.status);
-  return status === 'SOLICITADO' || status === 'CONFIRMADO';
 }
 
 function nomeDoPet(ag: AgendamentoResponse): string {
@@ -108,38 +111,58 @@ async function agendarLembretes(lembretes: LembreteAgendado[]): Promise<void> {
   await Promise.all(lembretes.map((l) => agendarPara(l.id, l.data, l.notificacao)));
 }
 
-// ---------- status conhecido (para detectar mudança feita pela clínica) ----------
+// ---------- retrato da agenda (para detectar mudança feita pela clínica) ----------
 
-async function lerStatusConhecido(): Promise<StatusConhecido | null> {
+async function lerAgendaConhecida(): Promise<AgendaConhecida | null> {
   try {
     const salvo = await AsyncStorage.getItem(CHAVE_STATUS_CONHECIDO);
-    return salvo ? (JSON.parse(salvo) as StatusConhecido) : null;
+    return salvo ? retratoSalvo(JSON.parse(salvo)) : null;
   } catch {
     return null;
   }
 }
 
-async function salvarStatusConhecido(status: StatusConhecido): Promise<void> {
-  await AsyncStorage.setItem(CHAVE_STATUS_CONHECIDO, JSON.stringify(status));
+async function salvarAgendaConhecida(agenda: AgendaConhecida): Promise<void> {
+  await AsyncStorage.setItem(CHAVE_STATUS_CONHECIDO, JSON.stringify(agenda));
 }
 
 /**
  * Registra uma mudança feita *pelo próprio tutor*, para que a próxima
  * sincronização não a confunda com uma ação da clínica.
+ *
+ * Sem retrato ainda, não grava: a próxima sincronização é a primeira e guarda
+ * tudo sem avisar. Um retrato só com esta consulta faria as outras parecerem
+ * novas.
  */
-async function registrarStatus(id: number, status: AgendamentoStatus): Promise<void> {
-  const conhecido = (await lerStatusConhecido()) ?? {};
-  conhecido[String(id)] = status;
-  await salvarStatusConhecido(conhecido);
+async function registrarSituacao(id: number, situacao: SituacaoConhecida): Promise<void> {
+  const conhecida = await lerAgendaConhecida();
+  if (!conhecida) return;
+  conhecida[String(id)] = { ...conhecida[String(id)], ...situacao };
+  await salvarAgendaConhecida(conhecida);
 }
 
-function avisoDeMudanca(
-  ag: AgendamentoResponse,
-  anterior: AgendamentoStatus,
-  atual: AgendamentoStatus
-): NovaNotificacao | null {
-  if (anterior === atual) return null;
+function avisoDeMudanca(mudanca: MudancaNaAgenda): NovaNotificacao | null {
+  const ag = mudanca.agendamento;
 
+  if (mudanca.tipo === 'nova') {
+    return {
+      titulo: `Nova consulta de ${nomeDoPet(ag)} 📅`,
+      corpo: `A clínica marcou para ${quando(ag)}${comQuem(ag)}.`,
+      destino: { tela: 'Agenda' },
+      canal: 'consultas',
+    };
+  }
+
+  if (mudanca.tipo === 'remarcada') {
+    return {
+      titulo: `Consulta de ${nomeDoPet(ag)} remarcada 📅`,
+      corpo: `A clínica remarcou para ${quando(ag)}${comQuem(ag)}.`,
+      destino: { tela: 'Agenda' },
+      canal: 'consultas',
+    };
+  }
+
+  const atual = mudanca.atual;
   if (atual === 'CONFIRMADO') {
     return {
       titulo: `Consulta de ${nomeDoPet(ag)} confirmada ✅`,
@@ -165,7 +188,8 @@ function avisoDeMudanca(
 // ---------- casos de uso ----------
 
 /**
- * Registra o status que o próprio tutor acabou de gravar (POST/PUT/DELETE).
+ * Registra o status (e, no POST/PUT, o horário) que o próprio tutor acabou de
+ * gravar.
  *
  * É só AsyncStorage — rápido — e é a única parte que a mutation espera antes
  * de invalidar o cache: a sincronização seguinte já conhece a mudança e não a
@@ -173,9 +197,15 @@ function avisoDeMudanca(
  */
 export async function registrarMudancaDoTutor(
   id: number,
-  status: AgendamentoStatus
+  status: AgendamentoStatus,
+  horario?: Pick<AgendamentoResponse, 'dtAgendamento' | 'hrAgendamento'>
 ): Promise<void> {
-  await registrarStatus(id, status);
+  await registrarSituacao(
+    id,
+    horario
+      ? { status, data: horario.dtAgendamento, hora: formatarHora(horario.hrAgendamento) }
+      : { status }
+  );
 }
 
 /**
@@ -215,23 +245,15 @@ export async function cancelarLembretesDaConsulta(id: number): Promise<void> {
  *
  * - Lembretes: mantém agendados os de toda consulta ativa e futura, e cancela
  *   os de consultas canceladas, realizadas ou que sumiram.
- * - Mudança de status: compara com o último status conhecido e avisa o que a
- *   clínica mudou. Na primeira sincronização só guarda o retrato, para não
- *   disparar um aviso por consulta antiga.
+ * - Mudanças da clínica: compara com o último retrato conhecido e avisa a
+ *   consulta nova, a remarcada e a mudança de status. Na primeira
+ *   sincronização só guarda o retrato, para não disparar um aviso por consulta
+ *   antiga.
  */
 export async function sincronizarAgenda(agenda: AgendamentoResponse[]): Promise<void> {
-  const anterior = await lerStatusConhecido();
-  const atual: StatusConhecido = {};
-  const avisos: NovaNotificacao[] = [];
-
-  for (const ag of agenda) {
-    const status = statusOuPadrao(ag.status);
-    atual[String(ag.id)] = status;
-    const statusAntes = anterior?.[String(ag.id)];
-    const aviso = statusAntes ? avisoDeMudanca(ag, statusAntes, status) : null;
-    if (aviso) avisos.push(aviso);
-  }
-  await salvarStatusConhecido(atual);
+  const anterior = await lerAgendaConhecida();
+  const avisos = mudancasNaAgenda(anterior, agenda).flatMap((m) => avisoDeMudanca(m) ?? []);
+  await salvarAgendaConhecida(retratoDaAgenda(agenda));
 
   if ((await pedirPermissao()) !== 'concedida') return;
 

@@ -24,10 +24,11 @@ import type { AgendamentoRequest } from '@/types/api';
  *
  * Depois de uma escrita, o status novo é registrado *antes* de invalidar o
  * cache: assim a sincronização que vem com o refetch já conhece a mudança
- * feita pelo tutor e não a confunde com uma ação da clínica. Esse registro é
- * só AsyncStorage. Avisos e lembretes rodam em segundo plano (`emSegundoPlano`):
- * a tela nunca espera o sistema de notificações, e falha nele nunca derruba a
- * escrita — a consulta foi marcada do mesmo jeito.
+ * feita pelo tutor (status e horário) e não a confunde com uma ação da
+ * clínica — nem a consulta que ele mesmo marcou com uma marcada pela clínica.
+ * Esse registro é só AsyncStorage. Avisos e lembretes rodam em segundo plano
+ * (`emSegundoPlano`): a tela nunca espera o sistema de notificações, e falha
+ * nele nunca derruba a escrita — a consulta foi marcada do mesmo jeito.
  */
 
 const semFalhar = (tarefa: Promise<void>) => tarefa.catch(() => undefined);
@@ -53,7 +54,9 @@ export function useCreateAgendamento() {
   return useMutation({
     mutationFn: (data: AgendamentoRequest) => createAgendamento(data),
     onSuccess: async (agendamento) => {
-      await semFalhar(registrarMudancaDoTutor(agendamento.id, statusOuPadrao(agendamento.status)));
+      await semFalhar(
+        registrarMudancaDoTutor(agendamento.id, statusOuPadrao(agendamento.status), agendamento)
+      );
       emSegundoPlano(notificarConsultaMarcada(agendamento, false));
       void qc.invalidateQueries({ queryKey: queryKeys.agendamentos });
     },
@@ -66,7 +69,9 @@ export function useUpdateAgendamento(id: number) {
   return useMutation({
     mutationFn: (data: AgendamentoRequest) => updateAgendamento(id, data),
     onSuccess: async (agendamento) => {
-      await semFalhar(registrarMudancaDoTutor(agendamento.id, statusOuPadrao(agendamento.status)));
+      await semFalhar(
+        registrarMudancaDoTutor(agendamento.id, statusOuPadrao(agendamento.status), agendamento)
+      );
       emSegundoPlano(notificarConsultaMarcada(agendamento, true));
       void qc.invalidateQueries({ queryKey: queryKeys.agendamentos });
       void qc.invalidateQueries({ queryKey: queryKeys.agendamento(id) });
