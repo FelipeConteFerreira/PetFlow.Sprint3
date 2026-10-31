@@ -4,7 +4,7 @@ import { useAgendamentos } from '@/hooks/use-agendamentos';
 import { usePets } from '@/hooks/use-pets';
 import { useTutorMe } from '@/hooks/use-tutor';
 import { getErrorMessage } from '@/lib/api/errors';
-import { hojeISO, porDataHora } from '@/lib/formatters';
+import { hojeISO, proximasConsultas } from '@/lib/formatters';
 
 /**
  * Tudo o que a tela Início mostra, já calculado.
@@ -21,13 +21,7 @@ export function useHome() {
 
   const hoje = hojeISO();
 
-  const proximas = useMemo(
-    () =>
-      [...(agenda.data ?? [])]
-        .filter((a) => a.dtAgendamento >= hoje && a.status !== 'CANCELADO')
-        .sort(porDataHora),
-    [agenda.data, hoje]
-  );
+  const proximas = useMemo(() => proximasConsultas(agenda.data ?? [], hoje), [agenda.data, hoje]);
 
   const carregando = tutor.isPending || pets.isPending || agenda.isPending;
   const erro = tutor.error ?? pets.error ?? agenda.error;

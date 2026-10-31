@@ -155,3 +155,15 @@ export function porDataHora<T extends { dtAgendamento: string; hrAgendamento: st
     `${b.dtAgendamento}T${b.hrAgendamento}`
   );
 }
+
+/**
+ * Próximas consultas: de hoje em diante, sem as canceladas, da mais próxima
+ * para a mais distante. É a mesma regra no Início e na Agenda.
+ */
+export function proximasConsultas<
+  T extends { dtAgendamento: string; hrAgendamento: string; status?: AgendamentoStatus },
+>(agenda: readonly T[], hoje: string): T[] {
+  return agenda
+    .filter((a) => a.dtAgendamento >= hoje && a.status !== 'CANCELADO')
+    .sort(porDataHora);
+}

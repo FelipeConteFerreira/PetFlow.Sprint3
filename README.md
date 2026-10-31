@@ -123,13 +123,18 @@ falha.
 
 ## 🔔 Notificações
 
-Notificações **locais** (`expo-notifications`), cada uma disparada por um evento
-real do sistema e levando o tutor à tela onde ele age sobre o aviso.
+Notificações **locais** (`expo-notifications`): quem as mostra é o próprio
+aparelho, sem servidor de push. Cada uma nasce de um dado real — a agenda e a
+carteira de vacinação que vêm da API, ou uma escrita do tutor que a API
+aceitou — e leva o tutor à tela onde ele age sobre o aviso. Nenhuma sai de
+botão de teste.
 
 | Cenário | Evento que dispara | O que o tutor vê | Toque leva a |
 |---|---|---|---|
 | Consulta solicitada / remarcada | Tutor salva o formulário (`POST`/`PUT` com sucesso) | Aviso na hora com data, hora e veterinário | Agenda |
 | Lembrete de consulta | 24 h e 2 h antes do horário (agendados no aparelho ao marcar) | "Consulta do Bidu amanhã às 14:00" | A consulta, para remarcar |
+| Consulta marcada pela clínica | A agenda vinda da API traz uma consulta ativa que o aparelho não conhecia e que o tutor não marcou nele | "Nova consulta de Bidu 📅 — A clínica marcou para 10/11/2026 às 14:00" | Agenda |
+| Remarcação pela clínica | Uma consulta ativa conhecida volta da API com outra data ou hora | "Consulta de Bidu remarcada 📅 — A clínica remarcou para …" | Agenda |
 | Confirmação pela clínica | A agenda vinda da API mostra `SOLICITADO → CONFIRMADO` | "Consulta do Bidu confirmada ✅" | Agenda |
 | Cancelamento pela clínica | A agenda vinda da API mostra `→ CANCELADO` sem o tutor ter cancelado | Aviso com o motivo | Agenda, para marcar outro horário |
 | Reforço de vacina | `proximoReforco` da carteira de vacinação | 7 dias antes e no dia, às 9h | Detalhe do pet |
@@ -138,22 +143,29 @@ Como cada peça se encaixa:
 
 - **Cancelar** uma consulta cancela os lembretes dela; **remarcar** os substitui.
 - A agenda é conferida com a API ao abrir o app, ao voltar do segundo plano e
-  a cada minuto com o app aberto. O status de cada consulta fica guardado no
-  aparelho; o que mudou **do lado da clínica** vira notificação. Mudanças
-  feitas pelo próprio tutor são registradas antes, para não gerar aviso falso.
+  a cada minuto com o app aberto. O status, a data e a hora de cada consulta
+  ficam guardados no aparelho; o que mudou **do lado da clínica** vira
+  notificação. Mudanças feitas pelo próprio tutor são registradas antes, para
+  não gerar aviso falso.
+- A primeira sincronização depois do login (ou da instalação) só guarda a
+  agenda: nenhuma consulta que já existia vira aviso.
+- Com o app fechado, os lembretes agendados tocam normalmente; os avisos de
+  mudança feita pela clínica chegam na próxima vez que o app for aberto.
 - O toque funciona com o app aberto, em segundo plano ou fechado. Se a sessão
   tiver expirado, a tela é aberta logo depois do login.
 - O **logout** cancela todos os lembretes: o próximo tutor do aparelho não
   recebe aviso do anterior.
 - A aba **Perfil** mostra se as notificações estão ativas e oferece ativá-las.
 
-Para demonstrar a confirmação pela clínica: marque uma consulta no app, mude o
-status dela para `CONFIRMADO` pela API de gestão (Swagger/Postman com um token
-de colaborador) e volte ao app — o aviso chega em até um minuto, ou na hora ao
-puxar a Agenda para atualizar.
+Para demonstrar os avisos da clínica, use o site do Clyvo Vet com uma conta da
+clínica, com o app aberto no celular: marcar uma consulta para o pet,
+remarcá-la, ou **Confirmar**/**Recusar** (com motivo) um pedido feito pelo app
+na agenda. O aviso chega em até um minuto, ou na hora ao puxar a Agenda para
+atualizar.
 
 Código: `services/notificacoes.ts` (acesso ao sistema), `lib/notificacoes.ts`
-(regras: quando e o que avisar), `hooks/use-notificacoes.ts` (ciclo de vida e
+(regras: quando e o que avisar), `lib/mudancas-agenda.ts` (o que mudou na
+agenda entre duas sincronizações), `hooks/use-notificacoes.ts` (ciclo de vida e
 toque), `navigation/navigation-ref.ts` (abrir a tela de destino).
 
 ---
@@ -192,7 +204,19 @@ professor cadastrado como tester.
 |---|---|
 | Pacote Android | `br.com.clyvovet.petflow` |
 | Gerar o APK | `npm run build:apk` |
-| Commit publicado | `4e0786c` (o mesmo da tela Sobre o App) |
+| Versão | `1.0.1` (`versionCode` 3) |
+| Commit publicado | `PREENCHER` com o commit do build final (o mesmo da tela Sobre o App) |
+
+### Ordem que garante que o hash bate
+
+1. **Commit final de código** em `master`.
+2. **Build a partir dele** (`npm run build:apk`). O `eas.json` tem
+   `requireCommit: true`: o EAS recusa build com alteração não commitada.
+3. **Distribuição** desse APK no Firebase App Distribution.
+4. **Só então** o commit de documentação com o hash publicado e o link do vídeo.
+
+Commits depois do commit publicado só alteram documentação; o código do app é
+o desse commit.
 
 Passo a passo completo, com checklist de conferência: [`docs/PUBLICACAO.md`](docs/PUBLICACAO.md).
 
