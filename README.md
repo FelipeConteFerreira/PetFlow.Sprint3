@@ -205,7 +205,7 @@ professor cadastrado como tester.
 | Pacote Android | `br.com.clyvovet.petflow` |
 | Gerar o APK | `npm run build:apk` |
 | Versão | `1.0.1` (`versionCode` 3) |
-| Commit publicado | `PREENCHER` com o commit do build final (o mesmo da tela Sobre o App) |
+| Commit publicado | `38b9dc9` com o commit do build final (o mesmo da tela Sobre o App) |
 
 ### Ordem que garante que o hash bate
 
@@ -361,14 +361,13 @@ estados vazios do aplicativo.
 
 ## 🎬 Vídeo de demonstração
 
-**Sprint 4 (entrega final):** `PREENCHER COM O LINK`
+**Sprint 4 (entrega final):** `[PREENCHER COM O LINK](https://youtu.be/ECITbM-zxck)`
 
 Gravado com o APK publicado no Firebase, em aparelho, num fluxo contínuo:
 login → pets (cadastrar, editar, ver vacinas) → marcar consulta (notificação
 na hora) → confirmação pela clínica (notificação e toque abrindo a Agenda) →
 remarcar e cancelar → tema escuro → Sobre o App com o hash → logout.
 
-Sprint 3: https://youtu.be/9Q5g4WaXCoA?feature=shared
 
 ---
 
