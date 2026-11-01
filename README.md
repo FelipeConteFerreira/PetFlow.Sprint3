@@ -361,7 +361,7 @@ estados vazios do aplicativo.
 
 ## 🎬 Vídeo de demonstração
 
-**Sprint 4 (entrega final):** `[PREENCHER COM O LINK](https://youtu.be/ECITbM-zxck)`
+**Sprint 4 (entrega final):** `(https://youtu.be/ECITbM-zxck)`
 
 Gravado com o APK publicado no Firebase, em aparelho, num fluxo contínuo:
 login → pets (cadastrar, editar, ver vacinas) → marcar consulta (notificação
